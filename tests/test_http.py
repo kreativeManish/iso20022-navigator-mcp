@@ -55,3 +55,11 @@ def test_health_ok_without_database(base_url, monkeypatch):
 
 def test_unknown_path_not_found(base_url):
     assert httpx2.get(base_url + "/nothing-here").status_code == 404
+
+
+def test_oversized_request_rejected(base_url):
+    """Bodies over MAX_REQUEST_BYTES are refused before any MCP handling."""
+    big = b"x" * (support.server.HTTP_OPTIONS["max_request_body_size"] + 1)
+    r = httpx2.post(base_url + support.server.MCP_PATH, content=big,
+                    headers={"content-type": "application/json", "accept": "application/json, text/event-stream"})
+    assert r.status_code == 413

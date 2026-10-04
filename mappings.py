@@ -161,8 +161,9 @@ def _current_release() -> dict:
     except Exception:
         log.exception("could not read i22_release for provenance")
         return {}
-    info = ({"data_baseline": rows[0]["release_id"]}
-            if rows else {})
+    if not rows:
+        return {}                          # not cached: an empty answer must not stick
+    info = {"data_baseline": rows[0]["release_id"]}
     _release_cache = (time.monotonic(), info)
     return info
 
