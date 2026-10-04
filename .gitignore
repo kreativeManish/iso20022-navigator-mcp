@@ -1,0 +1,17 @@
+# Virtual environment
+i22mcpvenv/
+
+# Secrets — never commit
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+# Generated test output
+try_tool_output.txt
+
+# Test cache
+.pytest_cache/
+
+# Local manual test harness (not published)
+try_tool.py

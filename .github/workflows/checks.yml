@@ -1,0 +1,43 @@
+# Release checks for the MCP server. A failure blocks merging into main
+# (branch protection requires the "checks" job).
+#
+# Database checks need the DATABASE_URL secret (the read-only iso20022_mcp role).
+# GitHub does not pass secrets to pull requests from forks, so those run only the
+# static checks; the database checks then run when the change reaches main.
+
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * *"     # nightly: catches database changes made outside this repo (8.5)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install
+        run: pip install -r requirements-dev.txt
+
+      - name: Bandit — no string-built SQL (1.1)
+        run: bandit -q -r . -x ./tests
+
+      - name: Tests
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -m pytest -q -rs
