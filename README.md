@@ -24,8 +24,13 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Put the connection string in a `.env` file as `DATABASE_URL=...`, then run `python server.py`
-(stdio transport, for Claude Desktop or MCP Inspector).
+Put the connection string in a `.env` file as `DATABASE_URL=...`, then either:
+
+- `python server.py` — stdio transport, for Claude Desktop or MCP Inspector
+- set `MCP_TRANSPORT=http`, then `python server.py` — HTTP transport as deployed, at
+  `http://localhost:8000/iso20022` (health check: `/iso20022/health`)
+
+See the top of `server.py` for the other settings.
 
 ## Tests
 
