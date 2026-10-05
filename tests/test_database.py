@@ -139,7 +139,7 @@ def test_calls_are_fast():
 
 
 def test_role_attributes():
-    """[8.6] Not privileged, read-only by default, has a statement timeout, cannot write."""
+    """[8.3][8.6] Not privileged, read-only by default, has a statement timeout, no write privileges."""
     [role] = support.db.fetch_all(
         "SELECT current_user AS name, rolsuper, rolcreaterole, rolcreatedb, rolbypassrls "
         "FROM pg_roles WHERE rolname = current_user")
@@ -160,6 +160,17 @@ def test_role_attributes():
     with pytest.raises(psycopg.Error):
         with support.db.pool.connection() as conn:
             conn.execute("UPDATE i22_release SET release_id = release_id WHERE false")
+
+    # Read-only by default can be switched off in a session; what actually prevents
+    # writes is having no write privilege on any table [8.3].
+    writable = support.db.fetch_all(
+        "SELECT n.nspname || '.' || c.relname AS name FROM pg_class c "
+        "JOIN pg_namespace n ON n.oid = c.relnamespace "
+        "WHERE c.relkind IN ('r', 'p', 'v', 'm', 'f') "
+        "AND n.nspname NOT IN ('pg_catalog', 'information_schema') AND n.nspname NOT LIKE 'pg_toast%%' "
+        "AND (has_table_privilege(c.oid, 'INSERT') OR has_table_privilege(c.oid, 'UPDATE') "
+        "OR has_table_privilege(c.oid, 'DELETE') OR has_table_privilege(c.oid, 'TRUNCATE'))")
+    assert writable == [], f"role can write to: {[r['name'] for r in writable]}"
 
 
 def test_access_snapshot_unchanged():
