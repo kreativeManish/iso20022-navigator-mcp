@@ -7,6 +7,7 @@ pool is opened once here (only when a real database is configured).
 """
 import pytest
 
+import mappings
 import support
 
 
@@ -21,3 +22,11 @@ def shared_pool():
     yield
     if support.HAS_DB:
         real_close()
+
+
+@pytest.fixture(autouse=True)
+def fresh_release_cache():
+    """Tests with a fake database must not leave a cached data baseline behind."""
+    mappings._release_cache = None
+    yield
+    mappings._release_cache = None

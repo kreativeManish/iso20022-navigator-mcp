@@ -10,7 +10,11 @@ Settings (environment variables):
                  the health check is served at <MCP_PATH>/health
   HOST           address to listen on over HTTP (default 127.0.0.1; 0.0.0.0 on a host like Railway)
   PORT           port to listen on over HTTP (default 8000; hosts like Railway set it)
+  RATE_LIMIT_LOOKUP_PER_MINUTE   calls per minute across all callers, lookup tools (default 600)
+  MAX_CONCURRENT_REQUESTS        simultaneous HTTP requests before 503 (default 20)
+  MAX_REQUEST_BYTES              largest accepted request body (default 65536)
 """
+import json
 import logging
 import os
 import sys
@@ -22,11 +26,27 @@ from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 
 import mappings
+from calls import guarded
 from db import pool
 
+
+class JsonFormatter(logging.Formatter):
+    """One JSON object per line, so the host's log viewer can filter on fields
+    (e.g. tool, outcome). Structured fields come from extra={"fields": {...}}."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        line = {"time": self.formatTime(record, "%Y-%m-%dT%H:%M:%S"), "level": record.levelname,
+                "logger": record.name, "msg": record.getMessage()}
+        line |= getattr(record, "fields", {})
+        if record.exc_info:
+            line["exc"] = self.formatException(record.exc_info)
+        return json.dumps(line, ensure_ascii=False, default=str)
+
+
 # Logs go to stderr: with the stdio transport, stdout carries the protocol itself.
-logging.basicConfig(stream=sys.stderr, level=logging.INFO,
-                    format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+_handler = logging.StreamHandler(sys.stderr)
+_handler.setFormatter(JsonFormatter())
+logging.basicConfig(level=logging.INFO, handlers=[_handler])
 
 INSTRUCTIONS = (
     "Read-only reference data for ISO 20022 financial messaging, from the ISO 20022 Navigator "
@@ -54,8 +74,10 @@ async def lifespan(server: MCPServer):
 mcp = MCPServer(name="iso20022-navigator", version="0.1.0",
                 instructions=INSTRUCTIONS, lifespan=lifespan)
 
-mcp.tool(name="iso20022_find_mappings", title="Find ISO 20022 mappings",
-         annotations=READ_ONLY)(mappings.find_mappings)
+# Each tool: its rate-limit tier, and the inputs that are safe to log (identifiers only, never free text).
+mcp.tool(name="iso20022_find_mappings", title="Find ISO 20022 mappings", annotations=READ_ONLY)(
+    guarded("iso20022_find_mappings", tier="lookup", log_inputs=("message", "standard"))(
+        mappings.find_mappings))
 
 MCP_PATH = "/" + os.environ.get("MCP_PATH", "/iso20022").strip("/")
 
@@ -72,14 +94,20 @@ HTTP_OPTIONS = dict(
     streamable_http_path=MCP_PATH,
     stateless_http=True,       # no per-client session: restarts never break a client
     json_response=True,        # one JSON reply per call; nothing to stream
+    max_request_body_size=int(os.environ.get("MAX_REQUEST_BYTES", "65536")),   # 413 above this
 )
 
 
 if __name__ == "__main__":
     if os.environ.get("MCP_TRANSPORT", "stdio") == "http":
-        mcp.run(transport="streamable-http",
-                host=os.environ.get("HOST", "127.0.0.1"),
-                port=int(os.environ.get("PORT", "8000")),
-                **HTTP_OPTIONS)
+        import uvicorn
+        host = os.environ.get("HOST", "127.0.0.1")
+        uvicorn.run(
+            mcp.streamable_http_app(host=host, **HTTP_OPTIONS),
+            host=host,
+            port=int(os.environ.get("PORT", "8000")),
+            limit_concurrency=int(os.environ.get("MAX_CONCURRENT_REQUESTS", "20")),   # 503 above this
+            log_config=None,              # keep the JSON logging configured above
+        )
     else:
         mcp.run()
