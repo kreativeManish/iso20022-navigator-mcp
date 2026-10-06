@@ -8,6 +8,8 @@ Free and public. The endpoint URL is all a client needs.
 
 **Endpoint:** `https://mcp.isonavigator.io/iso20022` (Streamable HTTP, open access)
 
+[Documentation](https://www.isonavigator.io/iso20022/mcp.html) · [Privacy](https://www.isonavigator.io/iso20022/mcp-privacy.html) · Support: i22navigatorapp@gmail.com
+
 ## Tools
 
 All tools are read-only.
@@ -21,6 +23,11 @@ All tools are read-only.
 - **Answers:** which ISO 20022 message replaces a legacy message (SWIFT MT, NACHA, CHAPS legacy), for example MT103 → pacs.008, and which payment schemes use an ISO 20022 message.
 - **Inputs:** `message` (a legacy or ISO 20022 message, such as `MT103`, `940` or `pacs.008`) and an optional `standard` (narrows the answer to one standard or scheme, such as `SEPA`).
 - **Returns:** message-level mappings with status, scheme usage, notes and a `provenance` block.
+- **Example questions:**
+  - What replaced MT103?
+  - What is the ISO 20022 equivalent of MT940?
+  - Which payment schemes use pacs.008?
+  - Is tsin.004 still current?
 - **Notes:**
   - Latest message version only. A version in the input (for example `pacs.008.001.08`) maps to its message (`pacs.008`).
   - Retired messages are returned with the data load in which they were retired.
