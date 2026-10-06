@@ -211,12 +211,12 @@ def find_mappings(
         str | None,
         Field(
             description=(
-                "Leave empty unless the user names one specific standard or scheme. Empty returns "
+                "Omit (or leave empty) unless the user names one specific standard or scheme. Omitted returns "
                 "every recorded scheme and legacy equivalent in one call; do not use this to check "
                 "schemes one by one. Examples when the user names one: 'SWIFT_MT', 'SEPA', 'NPP', 'CHAPS'."
             ),
             max_length=30,
-            pattern=r"^[A-Za-z0-9 _+/()\-]+$",
+            pattern=r"^[A-Za-z0-9 _+/()\-]*$",      # empty allowed: treated as not given
         ),
     ] = None,
 ) -> MappingResult:
@@ -227,7 +227,7 @@ def find_mappings(
     mappings with status and caveats.
 
     For "which schemes use X", call once with only the message: the response lists every
-    recorded scheme. Leave `standard` empty unless the user names one scheme.
+    recorded scheme. Omit `standard` unless the user names one scheme.
 
     - Legacy input (MT103, 940, ACH Statement): returns its ISO 20022 equivalent(s)
       in legacy_equivalents.
@@ -241,6 +241,7 @@ def find_mappings(
     """
     raw = " ".join(message.split())                        # collapse whitespace [2.3]
     std = " ".join(standard.split()) if standard else None
+    std = std or None                                      # "" or blanks: same as not given
     notes: list[str] = []
 
     iso_match = ISO_ID.match(raw)

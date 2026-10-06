@@ -103,7 +103,7 @@ def test_description_steers_scheme_questions(definition):
     """[6.1] Models must not use `standard` to check guessed schemes one by one."""
     assert "call once with only the message" in definition["description"]
     standard = definition["inputSchema"]["properties"]["standard"]
-    assert standard["description"].startswith("Leave empty unless the user names one specific")
+    assert standard["description"].startswith("Omit (or leave empty) unless the user names one specific")
 
 
 def _fake_db(by_sql):
@@ -131,3 +131,14 @@ def test_retired_message_note_leads_with_fact(monkeypatch):
     notes = result.structured_content["notes"]
     assert any(n.startswith("tsin.004 (FinancialInvoice) is a recognised ISO 20022 message that was retired")
                for n in notes), notes
+
+
+@pytest.mark.parametrize("standard", ["", "   "])
+def test_empty_standard_means_not_given(monkeypatch, standard):
+    """Models told to 'leave it empty' may send an empty string; it must work like omitting it."""
+    spy = _NoDatabase()
+    monkeypatch.setattr(mappings, "fetch_all", spy)
+    [result] = support.call_tool({"message": "MT103", "standard": standard})
+    assert not result.is_error, result.content[0].text
+    filtered = [params["std"] for _, params in (c for c in spy.calls if len(c) == 2) if "std" in params]
+    assert filtered and all(v is None for v in filtered), filtered
