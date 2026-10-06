@@ -63,6 +63,7 @@ def test_annotations(definition):
     assert a["idempotentHint"] is True
     assert a["openWorldHint"] is False
     assert a["destructiveHint"] is False
+    assert a["title"], "annotations.title missing (the directory portal flags it)"
 
 
 @pytest.mark.parametrize("args", [

@@ -60,8 +60,8 @@ INSTRUCTIONS = (
     "Verify against official ISO 20022 and scheme documentation before use in production."
 )
 
-READ_ONLY = ToolAnnotations(read_only_hint=True, idempotent_hint=True,
-                            open_world_hint=False, destructive_hint=False)
+READ_ONLY = dict(read_only_hint=True, idempotent_hint=True,
+                 open_world_hint=False, destructive_hint=False)
 
 
 @asynccontextmanager
@@ -77,7 +77,9 @@ mcp = MCPServer(name="iso20022-navigator", version="0.1.0",
                 instructions=INSTRUCTIONS, lifespan=lifespan)
 
 # Each tool: its rate-limit tier, and the inputs that are safe to log (identifiers only, never free text).
-mcp.tool(name="iso20022_legacy_and_scheme_mappings", title="ISO 20022 legacy and scheme mappings", annotations=READ_ONLY)(
+MAPPINGS_TITLE = "ISO 20022 legacy and scheme mappings"
+mcp.tool(name="iso20022_legacy_and_scheme_mappings", title=MAPPINGS_TITLE,
+         annotations=ToolAnnotations(title=MAPPINGS_TITLE, **READ_ONLY))(
     guarded("iso20022_legacy_and_scheme_mappings", tier="lookup", log_inputs=("message", "standard"))(
         mappings.find_mappings))
 
