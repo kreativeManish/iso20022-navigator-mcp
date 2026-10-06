@@ -53,7 +53,8 @@ INSTRUCTIONS = (
     "(https://www.isonavigator.io/iso20022/). Use these tools for any question about which ISO 20022 "
     "message replaces or corresponds to a legacy message (SWIFT MT, NACHA, CHAPS legacy), or which "
     "payment schemes use an ISO 20022 message, even when the answer seems well known: they return "
-    "sourced, current data. Answer from the returned data. If a response has "
+    "sourced, current data. For 'which schemes use X', call once without a standard filter. "
+    "Answer from the returned data. If a response has "
     "found=false or notes saying data is not recorded, tell the user so; do not fill gaps from "
     "general knowledge. Pass on the notes in each response."
 )
@@ -75,8 +76,8 @@ mcp = MCPServer(name="iso20022-navigator", version="0.1.0",
                 instructions=INSTRUCTIONS, lifespan=lifespan)
 
 # Each tool: its rate-limit tier, and the inputs that are safe to log (identifiers only, never free text).
-mcp.tool(name="iso20022_find_mappings", title="Find ISO 20022 mappings", annotations=READ_ONLY)(
-    guarded("iso20022_find_mappings", tier="lookup", log_inputs=("message", "standard"))(
+mcp.tool(name="iso20022_legacy_and_scheme_mappings", title="ISO 20022 legacy and scheme mappings", annotations=READ_ONLY)(
+    guarded("iso20022_legacy_and_scheme_mappings", tier="lookup", log_inputs=("message", "standard"))(
         mappings.find_mappings))
 
 MCP_PATH = "/" + os.environ.get("MCP_PATH", "/iso20022").strip("/")

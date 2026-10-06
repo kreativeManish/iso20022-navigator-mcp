@@ -93,6 +93,7 @@ def test_deactivated_message_flagged(case_results):
     """[7.3]"""
     body = _body(case_results[("tsin.004", None, False)])
     assert body["iso20022_deactivated_in"]
+    assert any("is a recognised ISO 20022 message that was retired" in n for n in body["notes"])
 
 
 @pytest.mark.parametrize("attack", PATTERN_SAFE_ATTACKS)

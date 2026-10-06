@@ -10,7 +10,7 @@ about ISO 20022 financial messaging, from the reference data behind the
 
 | Tool | What it answers |
 |---|---|
-| `iso20022_find_mappings` | Which ISO 20022 message replaces a legacy message (e.g. MT103 → pacs.008), and which payment schemes use an ISO 20022 message. Message-level only, not field-level. |
+| `iso20022_legacy_and_scheme_mappings` | Which ISO 20022 message replaces a legacy message (e.g. MT103 → pacs.008), and which payment schemes use an ISO 20022 message. Message-level only, not field-level. |
 
 All tools are read-only.
 

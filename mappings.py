@@ -1,5 +1,5 @@
 """
-mappings.py — the iso20022_find_mappings tool.
+mappings.py — the iso20022_legacy_and_scheme_mappings tool.
 
 Answers two kinds of question from i22_reference_message_map:
   - legacy -> ISO:  "What is the ISO 20022 equivalent of MT103?"   (mapping_type EQUIVALENT)
@@ -168,12 +168,26 @@ def _current_release() -> dict:
     return info
 
 
+def _retired_note(message_id: str, name: str | None, release: str) -> str:
+    """Lead with the fact that the message exists but is retired, so a model does not
+    read 'no mappings' as 'unknown identifier' [7.3]."""
+    label = f"{message_id} ({name})" if name else message_id
+    return (f"{label} is a recognised ISO 20022 message that was retired in the Navigator's "
+            f"{release} data load; it is no longer in the current catalogue.")
+
+
+# Stated on every ISO-message response: models otherwise attribute their own
+# description of the message to this source [6.1].
+MAPPINGS_ONLY_NOTE = ("This tool returns mappings only. It has no information about this message's "
+                      "structure, elements or rules; do not attribute any such description to this source.")
+
+
 def _query(sql: str, params: dict) -> list[dict]:
     """Run a query; never let raw database errors reach the client [4.1]."""
     try:
         return fetch_all(sql, params)
     except Exception:
-        log.exception("database error in iso20022_find_mappings")
+        log.exception("database error in iso20022_legacy_and_scheme_mappings")
         raise ToolError("The ISO 20022 reference database is temporarily unavailable. Try again in a minute.")
 
 
@@ -197,30 +211,33 @@ def find_mappings(
         str | None,
         Field(
             description=(
-                "Optional: limit results to one standard or scheme, e.g. 'SWIFT_MT', 'SEPA', "
-                "'NPP', 'CHAPS'. Leave empty to search all."
+                "Leave empty unless the user names one specific standard or scheme. Empty returns "
+                "every recorded scheme and legacy equivalent in one call; do not use this to check "
+                "schemes one by one. Examples when the user names one: 'SWIFT_MT', 'SEPA', 'NPP', 'CHAPS'."
             ),
             max_length=30,
             pattern=r"^[A-Za-z0-9 _+/()\-]+$",
         ),
     ] = None,
 ) -> MappingResult:
-    """Find which ISO 20022 message replaces a legacy payment message (e.g. MT103 -> pacs.008),
-    and which payment schemes use an ISO 20022 message.
+    """Use for ANY question about what replaces or corresponds to a legacy payment message
+    (SWIFT MT such as MT103, MT202, MT940; NACHA; CHAPS), or which payment schemes use an
+    ISO 20022 message (pacs.008, pain.001, pain.008, camt.053; SEPA, NPP, CHAPS, Lynx, CIPS
+    and others). Call it even when the answer seems well known: it returns sourced, current
+    mappings with status and caveats.
 
-    Use when the user asks what replaces or corresponds to a legacy message (SWIFT MT,
-    NACHA, CHAPS legacy MT), or which payment schemes use an ISO 20022 message
-    (SEPA, NPP, CHAPS, Lynx, CIPS and others). Call it even when the answer seems well
-    known: it returns sourced, current mappings with status and caveats.
+    For "which schemes use X", call once with only the message: the response lists every
+    recorded scheme. Leave `standard` empty unless the user names one scheme.
 
     - Legacy input (MT103, 940, ACH Statement): returns its ISO 20022 equivalent(s)
       in legacy_equivalents.
     - ISO 20022 input (pacs.008): returns legacy_equivalents (legacy messages that map to
       it) and used_by_schemes (schemes that use it).
 
-    Mappings are message-level only; this tool does not map individual fields.
-    It does not describe the ISO 20022 message itself. ISO 20022 messages that have been
-    deactivated are returned flagged with iso20022_deactivated_in, not hidden.
+    Mappings are message-level only; this tool does not map individual fields and has no
+    information about a message's structure, elements or rules. Do not cite it for those.
+    ISO 20022 messages that have been retired are returned flagged with
+    iso20022_deactivated_in, not hidden.
     """
     raw = " ".join(message.split())                        # collapse whitespace [2.3]
     std = " ".join(standard.split()) if standard else None
@@ -248,7 +265,7 @@ def find_mappings(
     schemes: list[Mapping] = []
     iso_name = None
     iso_deact = None
-    deactivated: dict[str, str] = {}
+    deactivated: dict[str, tuple[str, str | None]] = {}
     for r in rows:
         mapping = Mapping(**{k: r[k] for k in Mapping.model_fields})
         if kind == "iso20022":
@@ -262,13 +279,15 @@ def find_mappings(
         else:
             legacy.append(mapping)
         if r["iso20022_deactivated_in"]:
-            deactivated[r["iso20022_message_id"]] = r["iso20022_deactivated_in"]
+            deactivated[r["iso20022_message_id"]] = (r["iso20022_deactivated_in"], r["iso20022_message_name"])
         if r["mapping_type"] == "EQUIVALENT" and not r["iso20022_message_id"]:
             notes.append(f"{r['standard_name']} {r['ref_id']} has no ISO 20022 equivalent in this dataset.")
 
-    for msg, rel in deactivated.items():
-        notes.append(f"{msg} was marked deactivated in the Navigator's {rel} data load; "
-                     "it is no longer in the current catalogue.")
+    for msg, (rel, name) in deactivated.items():
+        notes.append(_retired_note(msg, name, rel))
+
+    if kind == "iso20022":
+        notes.append(MAPPINGS_ONLY_NOTE)
 
     # Explicit, explained not-found [3.5][7.1]
     if not rows:
@@ -279,9 +298,8 @@ def find_mappings(
             exists = _query(SQL_ISO_EXISTS, {"iso": shown})
             if exists and exists[0]["deactivated_in"]:
                 iso_name, iso_deact = exists[0]["message_name"], exists[0]["deactivated_in"]
-                notes.append(f"{shown} ({iso_name}) was marked deactivated in the Navigator's {iso_deact} data "
-                             "load; no legacy "
-                             "equivalents or scheme usage are recorded for it"
+                notes.append(_retired_note(shown, iso_name, iso_deact)
+                             + " No legacy equivalents or scheme usage are recorded for it"
                              + (f" in {std}." if std else "."))
             elif exists:
                 notes.append(f"{shown} ({exists[0]['message_name']}) is an ISO 20022 message, but no legacy "

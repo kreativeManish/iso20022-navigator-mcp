@@ -97,3 +97,37 @@ def test_database_errors_hidden(monkeypatch):
     for leak in ("iso20022_mcp", "password", "ep-secret-host", "FATAL"):
         assert leak not in text
     assert "Try again" in text
+
+
+def test_description_steers_scheme_questions(definition):
+    """[6.1] Models must not use `standard` to check guessed schemes one by one."""
+    assert "call once with only the message" in definition["description"]
+    standard = definition["inputSchema"]["properties"]["standard"]
+    assert standard["description"].startswith("Leave empty unless the user names one specific")
+
+
+def _fake_db(by_sql):
+    """A fetch_all stand-in answering each known query with fixed rows."""
+    def fetch(sql, params=()):
+        return by_sql.get(sql, [])
+    return fetch
+
+
+def test_iso_response_says_mappings_only(monkeypatch):
+    """[6.1] ISO-message responses state the tool has no structure information."""
+    monkeypatch.setattr(mappings, "fetch_all", _fake_db({}))
+    [iso] = support.call_tool({"message": "pacs.008"})
+    [legacy] = support.call_tool({"message": "MT103"})
+    assert mappings.MAPPINGS_ONLY_NOTE in iso.structured_content["notes"]
+    assert mappings.MAPPINGS_ONLY_NOTE not in legacy.structured_content.get("notes", [])
+
+
+def test_retired_message_note_leads_with_fact(monkeypatch):
+    """[7.3] A retired message is described as recognised but retired, not as unknown."""
+    monkeypatch.setattr(mappings, "fetch_all", _fake_db({
+        mappings.SQL_ISO_EXISTS: [{"message_name": "FinancialInvoice", "deactivated_in": "4Q2025"}],
+    }))
+    [result] = support.call_tool({"message": "tsin.004"})
+    notes = result.structured_content["notes"]
+    assert any(n.startswith("tsin.004 (FinancialInvoice) is a recognised ISO 20022 message that was retired")
+               for n in notes), notes
