@@ -142,3 +142,33 @@ def test_empty_standard_means_not_given(monkeypatch, standard):
     assert not result.is_error, result.content[0].text
     filtered = [params["std"] for _, params in (c for c in spy.calls if len(c) == 2) if "std" in params]
     assert filtered and all(v is None for v in filtered), filtered
+
+
+def _iso_row(standard_id, description):
+    return {"standard_id": standard_id, "standard_name": standard_id, "ref_id": "pacs.008",
+            "ref_name": "Customer Credit Transfer", "iso20022_message_id": "pacs.008",
+            "iso20022_message_name": "FIToFICustomerCreditTransfer", "iso20022_deactivated_in": None,
+            "status": "ACTIVE", "description": description, "mapping_type": "USES"}
+
+
+def test_full_scheme_list_is_compact(monkeypatch):
+    """[3.2] Unfiltered ISO lists omit descriptions and say how to get one."""
+    monkeypatch.setattr(mappings, "fetch_all", _fake_db({
+        mappings.SQL_BY_ISO: [_iso_row("SEPA", "Long SEPA description."), _iso_row("NPP", "Long NPP description.")],
+    }))
+    [result] = support.call_tool({"message": "pacs.008"})
+    body = result.structured_content
+    assert [m["standard_id"] for m in body["used_by_schemes"]] == ["SEPA", "NPP"]
+    assert all("description" not in m for m in body["used_by_schemes"])
+    assert mappings.COMPACT_LIST_NOTE in body["notes"]
+
+
+def test_named_scheme_keeps_description(monkeypatch):
+    """With standard given, the one scheme's description is returned."""
+    monkeypatch.setattr(mappings, "fetch_all", _fake_db({
+        mappings.SQL_BY_ISO: [_iso_row("SEPA", "Long SEPA description.")],
+    }))
+    [result] = support.call_tool({"message": "pacs.008", "standard": "SEPA"})
+    body = result.structured_content
+    assert body["used_by_schemes"][0]["description"] == "Long SEPA description."
+    assert mappings.COMPACT_LIST_NOTE not in body.get("notes", [])
