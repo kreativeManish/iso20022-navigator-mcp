@@ -8,6 +8,8 @@ Free and public. The endpoint URL is all a client needs.
 
 **Endpoint:** `https://mcp.isonavigator.io/iso20022` (Streamable HTTP, open access)
 
+[Documentation](https://www.isonavigator.io/iso20022/mcp.html) · [Privacy](https://www.isonavigator.io/iso20022/mcp-privacy.html) · Support: i22navigatorapp@gmail.com
+
 ## Tools
 
 All tools are read-only.
