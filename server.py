@@ -56,7 +56,8 @@ INSTRUCTIONS = (
     "sourced, current data. For 'which schemes use X', call once without a standard filter. "
     "Answer from the returned data. If a response has "
     "found=false or notes saying data is not recorded, tell the user so; do not fill gaps from "
-    "general knowledge. Pass on the notes in each response."
+    "general knowledge. Pass on the notes in each response. Some explanations are AI-generated. "
+    "Verify against official ISO 20022 and scheme documentation before use in production."
 )
 
 READ_ONLY = ToolAnnotations(read_only_hint=True, idempotent_hint=True,

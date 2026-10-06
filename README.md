@@ -43,6 +43,8 @@ Other assistants may behave differently. If an answer comes without a tool call,
 
 Every response carries a `provenance` block. Its `data_baseline` (for example `4Q2025`) is the quarter of the Navigator's baseline data load, which marks when the data was added to the Navigator and differs from any ISO 20022 publication date. Check the scheme's or SWIFT's own current documentation before relying on a migration date.
 
+Some explanations are AI-generated. Verify against official ISO 20022 and scheme documentation before use in production.
+
 ## Connect
 
 Use the endpoint URL above. Menu names change between releases; if a label
