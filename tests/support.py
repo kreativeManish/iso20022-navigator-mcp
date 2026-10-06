@@ -24,7 +24,7 @@ import server  # noqa: E402
 from mcp import Client  # noqa: E402
 
 HAS_DB = os.environ["DATABASE_URL"] != PLACEHOLDER_URL
-TOOL = "iso20022_find_mappings"
+TOOL = "iso20022_legacy_and_scheme_mappings"
 
 
 def call_tool(*arg_sets: dict) -> list:
