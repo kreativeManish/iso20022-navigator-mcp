@@ -176,6 +176,12 @@ def _retired_note(message_id: str, name: str | None, release: str) -> str:
             f"{release} data load; it is no longer in the current catalogue.")
 
 
+# Full scheme lists omit descriptions so the whole list stays small enough for clients
+# to pass straight to the model (large responses get spilled to files) [3.2].
+COMPACT_LIST_NOTE = ("Descriptions are omitted in this full list. For one scheme's full description, "
+                     "call again with standard set to that scheme's standard_id.")
+
+
 # Stated on every ISO-message response: models otherwise attribute their own
 # description of the message to this source [6.1].
 MAPPINGS_ONLY_NOTE = ("This tool returns mappings only. It has no information about this message's "
@@ -227,7 +233,8 @@ def find_mappings(
     mappings with status and caveats.
 
     For "which schemes use X", call once with only the message: the response lists every
-    recorded scheme. Omit `standard` unless the user names one scheme.
+    recorded scheme (without descriptions, to keep it compact). Omit `standard` unless the
+    user names one scheme; with `standard`, the response includes that scheme's description.
 
     - Legacy input (MT103, 940, ACH Statement): returns its ISO 20022 equivalent(s)
       in legacy_equivalents.
@@ -275,6 +282,8 @@ def find_mappings(
             iso_deact = iso_deact or r["iso20022_deactivated_in"]
             mapping.iso20022_message_id = mapping.iso20022_message_name = None
             mapping.iso20022_deactivated_in = None
+            if std is None:
+                mapping.description = None              # compact full list [3.2]
         if r["mapping_type"] == "USES":
             schemes.append(mapping)
         else:
@@ -288,6 +297,8 @@ def find_mappings(
         notes.append(_retired_note(msg, name, rel))
 
     if kind == "iso20022":
+        if rows and std is None:
+            notes.append(COMPACT_LIST_NOTE)
         notes.append(MAPPINGS_ONLY_NOTE)
 
     # Explicit, explained not-found [3.5][7.1]

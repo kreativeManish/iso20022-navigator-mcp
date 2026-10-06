@@ -18,7 +18,8 @@ import support
 pytestmark = pytest.mark.skipif(not support.HAS_DB, reason="no DATABASE_URL: database checks skipped")
 
 SNAPSHOT_FILE = Path(__file__).parent / "access_snapshot.sha256"
-BUDGET_CHARS = 16_000          # [3.2] about 4,000 tokens; largest real response is ~9,500 characters
+BUDGET_CHARS = 4_000           # [3.2] small enough for clients to pass straight to the model;
+                               # VS Code spilled a ~9,300-character response to a file
 MAX_SECONDS = 3.0              # [5.3] per call, after a warm-up call
 MAX_STATEMENT_TIMEOUT_MS = 30_000
 
