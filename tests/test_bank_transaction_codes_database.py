@@ -18,7 +18,8 @@ import support
 pytestmark = pytest.mark.skipif(not support.HAS_DB, reason="no DATABASE_URL: database checks skipped")
 
 TOOL = support.BTC_TOOL
-BUDGET_CHARS = 6_000           # [3.2] PROVISIONAL: set from the measured table, with headroom
+BUDGET_CHARS = 6_000           # [3.2] Measured 2026-10-07: largest is bare NTAV at 5,037 characters. 6,000 covers a
+                               # full 100-item response (the ceiling) and leaves headroom for a data refresh.
 MAX_SECONDS = 3.0              # [5.3] per call, after a warm-up call
 CONCEPTS = ("BankTransactionDomain", "BankTransactionFamily", "BankTransactionSubFamily")
 
@@ -149,7 +150,10 @@ def test_largest_responses_within_budget(all_codes, capsys):
     largest response there is. Also checks the item ceiling."""
     codes = [c for concept in CONCEPTS for c in all_codes[concept]]
     results = ask(*codes)
-    sizes = sorted(((len(r.content[0].text), c) for c, r in zip(codes, results)), reverse=True)
+    # A code that exists at two levels is asked once per level; the answer is the same, so list it once.
+    sizes = sorted(({c: len(r.content[0].text) for c, r in zip(codes, results)}).items(),
+                   key=lambda item: item[1], reverse=True)
+    sizes = [(size, code) for code, size in sizes]
     with capsys.disabled():
         print("\nLargest bare-code responses (characters):")
         for size, code in sizes[:10]:
