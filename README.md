@@ -16,7 +16,29 @@ All tools are read-only.
 
 | Tool | What it answers |
 |---|---|
+| [`iso20022_bank_transaction_codes`](#iso20022_bank_transaction_codes) | What an ISO 20022 Bank Transaction Code (domain, family, subfamily) means, and which codes exist under a domain or family. |
 | [`iso20022_legacy_and_scheme_mappings`](#iso20022_legacy_and_scheme_mappings) | Which ISO 20022 message replaces a legacy message, and which payment schemes use an ISO 20022 message. |
+
+### `iso20022_bank_transaction_codes`
+
+- **Answers:** what an ISO 20022 Bank Transaction Code means: the domain, family and subfamily codes that classify entries in bank statements and account reports, for example `PMNT-RCDT-ESCT`. It also shows which families sit under a domain, which subfamilies under a family, and where a code appears.
+- **Input:** `code`, written domain-family-subfamily with hyphens. Any part can stand alone or be skipped:
+  - `PMNT`: a domain, with its families.
+  - `PMNT-RCDT`: a domain and family, with the subfamilies.
+  - `PMNT-RCDT-ESCT`: a full code, with the three names and a description.
+  - `/RCDT` and `//ESCT`: a family or a subfamily on its own (the leading slashes fix the level).
+  - `/RCDT/ESCT` and `PMNT//ESCT`: two parts with one level skipped.
+  - `ESCT`: no level given; every level where the code exists is returned.
+- **Returns:** official names, counts, lists of the related codes, a description when one combination matches, notes and a `provenance` block. A code that is not found says where each part exists and lists the closest existing codes.
+- **Example questions:**
+  - What does bank transaction code PMNT-RCDT-ESCT mean?
+  - Which families does the PMNT domain contain?
+  - Which domains use the family RCDT?
+  - Is OTHR a family or a subfamily?
+- **Notes:**
+  - Covers the ISO external code list. Bank-specific (proprietary) codes are outside it, so a code that is not found may be one of those.
+  - Codes are matched, not meanings. To find a code for a type of transaction, browse from the domain down.
+  - Combination descriptions are AI-generated and validated against the official ISO definitions.
 
 ### `iso20022_legacy_and_scheme_mappings`
 
@@ -35,9 +57,9 @@ All tools are read-only.
 
 ## Getting the assistant to use it
 
-Some assistants answer from general knowledge unless asked to use a tool, a choice made by the assistant. Adding the following line to a Project's instructions helps the assistant use the tool where it applies:
+Some assistants answer from general knowledge unless asked to use a tool, a choice made by the assistant. Adding the following line to a Project's instructions helps the assistant use the tools where they apply:
 
-> For any question about ISO 20022 messages, their legacy equivalents (SWIFT MT, NACHA) or which payment schemes use a message, call the ISO Navigator connector first and answer from its data.
+> For any question about ISO 20022 bank transaction codes, messages, their legacy equivalents (SWIFT MT, NACHA) or which payment schemes use a message, call the ISO Navigator connector first and answer from its data.
 
 Other assistants may behave differently. If an answer comes without a tool call, ask again with "according to the ISO Navigator".
 
@@ -92,7 +114,7 @@ Check it with `claude mcp list`, or `/mcp` inside Claude Code. Add `--scope user
    ```
 
 3. Run **MCP: List Servers**, select `iso20022` and start (or restart) it.
-4. Use Copilot Chat in **Agent** mode; the tool appears in the tools list.
+4. Use Copilot Chat in **Agent** mode; the tools appear in the tools list.
 
 ### Cursor
 
