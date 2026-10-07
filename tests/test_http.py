@@ -12,7 +12,7 @@ import httpx2
 import pytest
 import uvicorn
 
-import mappings
+import shared
 import support
 from mcp import Client
 
@@ -46,7 +46,7 @@ def test_mcp_endpoint_lists_tools(base_url):
 def test_health_ok_without_database(base_url, monkeypatch):
     """The health check answers 'ok' and never touches the database."""
     calls = []
-    monkeypatch.setattr(mappings, "fetch_all", lambda *a, **k: calls.append(a))
+    monkeypatch.setattr(shared, "fetch_all", lambda *a, **k: calls.append(a))
     monkeypatch.setattr(support.db, "fetch_all", lambda *a, **k: calls.append(a))
     r = httpx2.get(base_url + support.server.MCP_PATH + "/health")
     assert r.status_code == 200 and r.text == "ok"

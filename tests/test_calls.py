@@ -8,7 +8,7 @@ import logging
 import pytest
 
 import calls
-import mappings
+import shared
 import support
 
 
@@ -24,7 +24,7 @@ class _FakeDatabase:
 @pytest.fixture
 def fake_db(monkeypatch):
     db = _FakeDatabase()
-    monkeypatch.setattr(mappings, "fetch_all", db)
+    monkeypatch.setattr(shared, "fetch_all", db)
     return db
 
 
@@ -84,7 +84,7 @@ def test_refusal_and_errors_are_logged(monkeypatch, tight_limit, caplog):
     caplog.set_level(logging.INFO, logger="iso20022_mcp.calls")
     def broken(*args, **kwargs):
         raise RuntimeError("db down")
-    monkeypatch.setattr(mappings, "fetch_all", broken)
+    monkeypatch.setattr(shared, "fetch_all", broken)
     support.call_tool(*[{"message": "MT103"}] * 4)
     outcomes = [r.fields["outcome"] for r in _call_records(caplog)]
     assert outcomes == ["error", "error", "error", "rate_limited"]
