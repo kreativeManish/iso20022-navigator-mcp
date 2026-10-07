@@ -24,23 +24,25 @@ import server  # noqa: E402
 from mcp import Client  # noqa: E402
 
 HAS_DB = os.environ["DATABASE_URL"] != PLACEHOLDER_URL
-TOOL = "iso20022_legacy_and_scheme_mappings"
+MAPPINGS_TOOL = "iso20022_legacy_and_scheme_mappings"
+BTC_TOOL = "iso20022_bank_transaction_codes"
+TOOLS = (BTC_TOOL, MAPPINGS_TOOL)        # the order clients list them
 
 
-def call_tool(*arg_sets: dict) -> list:
-    """Call the tool once per argument dict through a real in-process MCP client."""
+def call_tool(*arg_sets: dict, tool: str = MAPPINGS_TOOL) -> list:
+    """Call a tool once per argument dict through a real in-process MCP client."""
     async def go():
         async with Client(server.mcp) as client:
-            return [await client.call_tool(TOOL, args) for args in arg_sets]
+            return [await client.call_tool(tool, args) for args in arg_sets]
     return asyncio.run(go())
 
 
-def tool_definition() -> dict:
-    """The tool definition exactly as a client model sees it."""
+def tool_definition(tool: str = MAPPINGS_TOOL) -> dict:
+    """A tool definition exactly as a client model sees it."""
     async def go():
         async with Client(server.mcp) as client:
-            tool = (await client.list_tools()).tools[0]
-            return tool.model_dump(mode="json", exclude_none=True, by_alias=True)
+            found = next(t for t in (await client.list_tools()).tools if t.name == tool)
+            return found.model_dump(mode="json", exclude_none=True, by_alias=True)
     return asyncio.run(go())
 
 

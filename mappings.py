@@ -8,20 +8,12 @@ Answers two kinds of question from i22_reference_message_map:
 
 Release checklist references are in square brackets, e.g. [1.2].
 """
-import json
-import logging
 import re
-import time
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from mcp.server.mcpserver.exceptions import ToolError
-from mcp.types import CallToolResult, TextContent
-
-from db import fetch_all
-
-log = logging.getLogger("iso20022_mcp.mappings")
+from shared import Provenance, current_release, query, respond
 
 # --------------------------------------------------------------------------
 # Input recognition
@@ -54,13 +46,7 @@ class Mapping(BaseModel):
     description: str | None = Field(None, description="Explanation of this specific mapping")
 
 
-class Provenance(BaseModel):
-    source: str = "ISO 20022 Navigator reference data (https://www.isonavigator.io/iso20022/)"
-    scope: str = "Message-level mappings only (not field-level). ISO 20022 messages at their latest version only."
-    data_baseline: str | None = Field(
-        None, description="Quarter of the Navigator's baseline data load, e.g. 4Q2025: data reflects that load "
-                          "unless stated otherwise. This is when data was added to the Navigator, not an "
-                          "ISO 20022 publication.")
+MAPPINGS_SCOPE = "Message-level mappings only (not field-level). ISO 20022 messages at their latest version only."
 
 
 class MappingResult(BaseModel):
@@ -80,7 +66,7 @@ class MappingResult(BaseModel):
         description="Payment schemes that use this ISO 20022 message",
     )
     notes: list[str] = Field(default_factory=list, description="Caveats to pass on to the user")
-    provenance: Provenance = Field(default_factory=Provenance)
+    provenance: Provenance
 
 
 # --------------------------------------------------------------------------
@@ -127,47 +113,12 @@ SQL_STANDARD_EXISTS = """
 SELECT standard_id FROM i22_reference_standard
 WHERE  lower(standard_id) = lower(%(s)s) OR lower(display_name) = lower(%(s)s)
 """
-# Current data release for provenance [3.6]
-# Baseline = earliest load. Revisit if a full data refresh is ever loaded.
-SQL_RELEASE = "SELECT release_id FROM i22_release ORDER BY release_date ASC LIMIT 1"
 SQL_STANDARDS = "SELECT standard_id FROM i22_reference_standard ORDER BY sort_order NULLS LAST, standard_id"
 
 
 # --------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------
-def _respond(result: MappingResult) -> CallToolResult:
-    """Send the result without null fields or empty lists [3.4]."""
-    data = result.model_dump(mode="json", exclude_none=True)
-    data = {k: v for k, v in data.items() if v != []}
-    return CallToolResult(
-        content=[TextContent(type="text", text=json.dumps(data, ensure_ascii=False))],
-        structured_content=data,
-    )
-
-
-_RELEASE_TTL = 600          # seconds; data loads are rare, so a short cache saves a query per call
-_release_cache: tuple[float, dict] | None = None
-
-
-def _current_release() -> dict:
-    """Baseline data load for provenance [3.6]. A failure here is logged, not fatal:
-    the mapping answer is still valid without it, and the gap shows up in tests."""
-    global _release_cache
-    if _release_cache and time.monotonic() - _release_cache[0] < _RELEASE_TTL:
-        return _release_cache[1]
-    try:
-        rows = fetch_all(SQL_RELEASE)
-    except Exception:
-        log.exception("could not read i22_release for provenance")
-        return {}
-    if not rows:
-        return {}                          # not cached: an empty answer must not stick
-    info = {"data_baseline": rows[0]["release_id"]}
-    _release_cache = (time.monotonic(), info)
-    return info
-
-
 def _retired_note(message_id: str, name: str | None, release: str) -> str:
     """Lead with the fact that the message exists but is retired, so a model does not
     read 'no mappings' as 'unknown identifier' [7.3]."""
@@ -189,12 +140,7 @@ MAPPINGS_ONLY_NOTE = ("This tool returns mappings only. It has no information ab
 
 
 def _query(sql: str, params: dict) -> list[dict]:
-    """Run a query; never let raw database errors reach the client [4.1]."""
-    try:
-        return fetch_all(sql, params)
-    except Exception:
-        log.exception("database error in iso20022_legacy_and_scheme_mappings")
-        raise ToolError("The ISO 20022 reference database is temporarily unavailable. Try again in a minute.")
+    return query("iso20022_legacy_and_scheme_mappings", sql, params)
 
 
 # --------------------------------------------------------------------------
@@ -330,9 +276,9 @@ def find_mappings(
                          + (f" in {std}" if std else "")
                          + ". Do not infer an equivalent from general knowledge.")
 
-    return _respond(MappingResult(
+    return respond(MappingResult(
         found=bool(rows), input=shown, input_kind=kind, iso20022_message_name=iso_name,
         iso20022_deactivated_in=iso_deact,
-        provenance=Provenance(**_current_release()),
+        provenance=Provenance(scope=MAPPINGS_SCOPE, **current_release()),
         legacy_equivalents=legacy, used_by_schemes=schemes, notes=notes,
     ))

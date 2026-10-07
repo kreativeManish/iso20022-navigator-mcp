@@ -8,12 +8,19 @@ import re
 import pytest
 
 import mappings
+import shared
 import support
 
 
 @pytest.fixture(scope="module")
-def definition():
-    return support.tool_definition()
+def mappings_definition():
+    return support.tool_definition(support.MAPPINGS_TOOL)
+
+
+@pytest.fixture(scope="module", params=support.TOOLS)
+def definition(request):
+    """Checks that apply to every tool run once per tool."""
+    return support.tool_definition(request.param)
 
 
 class _NoDatabase:
@@ -81,7 +88,7 @@ def test_annotations(definition):
 def test_invalid_input_rejected_before_database(monkeypatch, args):
     """[1.6][2.1] Attack strings that break the input pattern never reach the database."""
     spy = _NoDatabase()
-    monkeypatch.setattr(mappings, "fetch_all", spy)
+    monkeypatch.setattr(shared, "fetch_all", spy)
     [result] = support.call_tool(args)
     assert result.is_error, f"accepted: {args}"
     assert spy.calls == [], "the database was reached"
@@ -91,7 +98,7 @@ def test_database_errors_hidden(monkeypatch):
     """[4.1][4.2] Raw database errors never reach the client; the model is told what to do."""
     def broken(*args, **kwargs):
         raise RuntimeError('FATAL: password authentication failed for user "iso20022_mcp" host=ep-secret-host')
-    monkeypatch.setattr(mappings, "fetch_all", broken)
+    monkeypatch.setattr(shared, "fetch_all", broken)
     [result] = support.call_tool({"message": "MT103"})
     assert result.is_error
     text = result.content[0].text
@@ -100,10 +107,10 @@ def test_database_errors_hidden(monkeypatch):
     assert "Try again" in text
 
 
-def test_description_steers_scheme_questions(definition):
+def test_description_steers_scheme_questions(mappings_definition):
     """[6.1] Models must not use `standard` to check guessed schemes one by one."""
-    assert "call once with only the message" in definition["description"]
-    standard = definition["inputSchema"]["properties"]["standard"]
+    assert "call once with only the message" in mappings_definition["description"]
+    standard = mappings_definition["inputSchema"]["properties"]["standard"]
     assert standard["description"].startswith("Omit (or leave empty) unless the user names one specific")
 
 
@@ -116,7 +123,7 @@ def _fake_db(by_sql):
 
 def test_iso_response_says_mappings_only(monkeypatch):
     """[6.1] ISO-message responses state the tool has no structure information."""
-    monkeypatch.setattr(mappings, "fetch_all", _fake_db({}))
+    monkeypatch.setattr(shared, "fetch_all", _fake_db({}))
     [iso] = support.call_tool({"message": "pacs.008"})
     [legacy] = support.call_tool({"message": "MT103"})
     assert mappings.MAPPINGS_ONLY_NOTE in iso.structured_content["notes"]
@@ -125,7 +132,7 @@ def test_iso_response_says_mappings_only(monkeypatch):
 
 def test_retired_message_note_leads_with_fact(monkeypatch):
     """[7.3] A retired message is described as recognised but retired, not as unknown."""
-    monkeypatch.setattr(mappings, "fetch_all", _fake_db({
+    monkeypatch.setattr(shared, "fetch_all", _fake_db({
         mappings.SQL_ISO_EXISTS: [{"message_name": "FinancialInvoice", "deactivated_in": "4Q2025"}],
     }))
     [result] = support.call_tool({"message": "tsin.004"})
@@ -138,7 +145,7 @@ def test_retired_message_note_leads_with_fact(monkeypatch):
 def test_empty_standard_means_not_given(monkeypatch, standard):
     """Models told to 'leave it empty' may send an empty string; it must work like omitting it."""
     spy = _NoDatabase()
-    monkeypatch.setattr(mappings, "fetch_all", spy)
+    monkeypatch.setattr(shared, "fetch_all", spy)
     [result] = support.call_tool({"message": "MT103", "standard": standard})
     assert not result.is_error, result.content[0].text
     filtered = [params["std"] for _, params in (c for c in spy.calls if len(c) == 2) if "std" in params]
@@ -154,7 +161,7 @@ def _iso_row(standard_id, description):
 
 def test_full_scheme_list_is_compact(monkeypatch):
     """[3.2] Unfiltered ISO lists omit descriptions and say how to get one."""
-    monkeypatch.setattr(mappings, "fetch_all", _fake_db({
+    monkeypatch.setattr(shared, "fetch_all", _fake_db({
         mappings.SQL_BY_ISO: [_iso_row("SEPA", "Long SEPA description."), _iso_row("NPP", "Long NPP description.")],
     }))
     [result] = support.call_tool({"message": "pacs.008"})
@@ -166,7 +173,7 @@ def test_full_scheme_list_is_compact(monkeypatch):
 
 def test_named_scheme_keeps_description(monkeypatch):
     """With standard given, the one scheme's description is returned."""
-    monkeypatch.setattr(mappings, "fetch_all", _fake_db({
+    monkeypatch.setattr(shared, "fetch_all", _fake_db({
         mappings.SQL_BY_ISO: [_iso_row("SEPA", "Long SEPA description.")],
     }))
     [result] = support.call_tool({"message": "pacs.008", "standard": "SEPA"})

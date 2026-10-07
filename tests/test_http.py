@@ -12,7 +12,7 @@ import httpx2
 import pytest
 import uvicorn
 
-import mappings
+import shared
 import support
 from mcp import Client
 
@@ -36,17 +36,17 @@ def base_url():
 
 
 def test_mcp_endpoint_lists_tools(base_url):
-    """An MCP client can connect at MCP_PATH and see the tool."""
+    """An MCP client can connect at MCP_PATH and see both tools, bank transaction codes first."""
     async def go():
         async with Client(base_url + support.server.MCP_PATH) as client:
             return [t.name for t in (await client.list_tools()).tools]
-    assert asyncio.run(go()) == [support.TOOL]
+    assert asyncio.run(go()) == list(support.TOOLS)
 
 
 def test_health_ok_without_database(base_url, monkeypatch):
     """The health check answers 'ok' and never touches the database."""
     calls = []
-    monkeypatch.setattr(mappings, "fetch_all", lambda *a, **k: calls.append(a))
+    monkeypatch.setattr(shared, "fetch_all", lambda *a, **k: calls.append(a))
     monkeypatch.setattr(support.db, "fetch_all", lambda *a, **k: calls.append(a))
     r = httpx2.get(base_url + support.server.MCP_PATH + "/health")
     assert r.status_code == 200 and r.text == "ok"
