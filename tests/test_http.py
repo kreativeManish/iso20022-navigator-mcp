@@ -36,11 +36,11 @@ def base_url():
 
 
 def test_mcp_endpoint_lists_tools(base_url):
-    """An MCP client can connect at MCP_PATH and see the tool."""
+    """An MCP client can connect at MCP_PATH and see both tools, bank transaction codes first."""
     async def go():
         async with Client(base_url + support.server.MCP_PATH) as client:
             return [t.name for t in (await client.list_tools()).tools]
-    assert asyncio.run(go()) == [support.TOOL]
+    assert asyncio.run(go()) == list(support.TOOLS)
 
 
 def test_health_ok_without_database(base_url, monkeypatch):

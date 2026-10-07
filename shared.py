@@ -63,10 +63,12 @@ def query(tool: str, sql: str, params: dict) -> list[dict]:
         raise ToolError("The ISO 20022 reference database is temporarily unavailable. Try again in a minute.")
 
 
-def respond(result: BaseModel) -> CallToolResult:
-    """Send the result without null fields or empty top-level lists [3.4]."""
+def respond(result: BaseModel, keep: tuple[str, ...] = ()) -> CallToolResult:
+    """Send the result without null fields or empty top-level lists [3.4].
+    `keep` names top-level lists that stay even when empty, for tools whose result
+    always carries that list."""
     data = result.model_dump(mode="json", exclude_none=True)
-    data = {k: v for k, v in data.items() if v != []}
+    data = {k: v for k, v in data.items() if v != [] or k in keep}
     return CallToolResult(
         content=[TextContent(type="text", text=json.dumps(data, ensure_ascii=False))],
         structured_content=data,

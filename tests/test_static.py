@@ -13,8 +13,14 @@ import support
 
 
 @pytest.fixture(scope="module")
-def definition():
-    return support.tool_definition()
+def mappings_definition():
+    return support.tool_definition(support.MAPPINGS_TOOL)
+
+
+@pytest.fixture(scope="module", params=support.TOOLS)
+def definition(request):
+    """Checks that apply to every tool run once per tool."""
+    return support.tool_definition(request.param)
 
 
 class _NoDatabase:
@@ -101,10 +107,10 @@ def test_database_errors_hidden(monkeypatch):
     assert "Try again" in text
 
 
-def test_description_steers_scheme_questions(definition):
+def test_description_steers_scheme_questions(mappings_definition):
     """[6.1] Models must not use `standard` to check guessed schemes one by one."""
-    assert "call once with only the message" in definition["description"]
-    standard = definition["inputSchema"]["properties"]["standard"]
+    assert "call once with only the message" in mappings_definition["description"]
+    standard = mappings_definition["inputSchema"]["properties"]["standard"]
     assert standard["description"].startswith("Omit (or leave empty) unless the user names one specific")
 
 
