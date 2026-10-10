@@ -63,7 +63,7 @@ def test_code_counts_match_the_design_document(all_codes):
 def test_domains_account_for_every_combination(all_codes):
     results = ask(*all_codes["BankTransactionDomain"])
     total = 0
-    for code, result in zip(all_codes["BankTransactionDomain"], results):
+    for code, result in zip(all_codes["BankTransactionDomain"], results, strict=True):
         m = body(result)["matches"][0]
         assert m["level"] == "domain" and m["resolved"]["domain"]["code"] == code
         assert m["resolved"]["domain"]["name"]
@@ -151,7 +151,7 @@ def test_largest_responses_within_budget(all_codes, capsys):
     codes = [c for concept in CONCEPTS for c in all_codes[concept]]
     results = ask(*codes)
     # A code that exists at two levels is asked once per level; the answer is the same, so list it once.
-    sizes = sorted(({c: len(r.content[0].text) for c, r in zip(codes, results)}).items(),
+    sizes = sorted(({c: len(r.content[0].text) for c, r in zip(codes, results, strict=True)}).items(),
                    key=lambda item: item[1], reverse=True)
     sizes = [(size, code) for code, size in sizes]
     with capsys.disabled():

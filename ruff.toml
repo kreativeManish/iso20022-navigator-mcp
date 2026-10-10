@@ -1,0 +1,7 @@
+# Lint settings for the MCP server. CI and local runs both read this file.
+# F  = Pyflakes: unused imports and variables, undefined names
+# B  = flake8-bugbear: patterns that often hide bugs
+# E4, E7, E9 = pycodestyle errors that signal real problems (import position,
+#              statement problems, syntax errors). E501 (line length) is left out on purpose.
+[lint]
+select = ["F", "B", "E4", "E7", "E9"]
