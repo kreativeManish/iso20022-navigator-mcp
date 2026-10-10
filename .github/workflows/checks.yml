@@ -37,6 +37,9 @@ jobs:
       - name: Bandit — no string-built SQL (1.1)
         run: bandit -q -r . -x ./tests
 
+      - name: Ruff — unused code and likely bugs
+        run: ruff check .
+
       - name: Tests
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

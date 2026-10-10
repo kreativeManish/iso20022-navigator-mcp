@@ -46,7 +46,8 @@ class Mapping(BaseModel):
     description: str | None = Field(None, description="Explanation of this specific mapping")
 
 
-MAPPINGS_SCOPE = "Message-level mappings only (not field-level). ISO 20022 messages at their latest version only."
+MAPPINGS_SCOPE = ("Message-level mappings only (not field-level). ISO 20022 messages at their latest version only. "
+                  "Schemes covered are the 16 recorded in the Navigator, a selection of the world's payment schemes.")
 
 
 class MappingResult(BaseModel):

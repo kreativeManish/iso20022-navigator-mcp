@@ -36,7 +36,7 @@ CASES = [
     ("pain.008", "SEPA", True),
     ("tsin.004", None, False),       # deactivated: flagged, not hidden
     ("xyzz.999", None, False),
-    ("MT999", None, False),
+    ("MT999", None, True),         # mapped to camt.110 on 2026-10-10 (was a known gap)
     ("iDEAL", None, False),
     ("pacs.008", "FEDWIRE", False),
 ]
@@ -75,7 +75,7 @@ def _no_nulls(value, path="response"):
 
 @pytest.fixture(scope="module")
 def case_results():
-    return dict(zip(CASES, support.call_tool(*(_args(m, s) for m, s, _ in CASES))))
+    return dict(zip(CASES, support.call_tool(*(_args(m, s) for m, s, _ in CASES)), strict=True))
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: f"{c[0]}|{c[1]}")

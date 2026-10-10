@@ -72,6 +72,8 @@ Other assistants may behave differently. If an answer comes without a tool call,
 
 Every response carries a `provenance` block. Its `data_baseline` (for example `4Q2025`) is the quarter of the Navigator's baseline data load, which marks when the data was added to the Navigator and differs from any ISO 20022 publication date. Check the scheme's or SWIFT's own current documentation before relying on a migration date.
 
+The Navigator records a selection of the world's payment schemes, not all of them. The standards covered are SWIFT MT, SEPA, CIPS, NACHA / ACH, AFT, Lynx, RTR, CHAPS, Elixir, iDEAL, SIC, Bankgirot, NPP, MEPS+, RENTAS and BAHTNET. A scheme not on this list, such as T2, FedNow or Fedwire, has no recorded mappings, so the response will not list it.
+
 Some explanations are AI-generated. Verify against official ISO 20022 and scheme documentation before use in production.
 
 ## Connect
@@ -139,6 +141,41 @@ Custom MCP connectors need developer mode and are available on the web. Availabi
 In short: turn on developer mode under **Settings → Apps → Advanced settings**, choose **Create**, enter the endpoint URL
 and leave authentication off, select **Scan Tools**, then **Create**. This server reads data, so read-only access is enough.
 
+### Codex CLI
+
+```
+codex mcp add iso20022 --url https://mcp.isonavigator.io/iso20022
+```
+
+This saves the server to `~/.codex/config.toml`. Or add it there yourself (`.codex/config.toml` for one trusted project):
+
+```toml
+[mcp_servers.iso20022]
+url = "https://mcp.isonavigator.io/iso20022"
+```
+
+Check it with `codex mcp list`, or `/mcp` inside a Codex session.
+
+### Gemini CLI
+
+```
+gemini mcp add --transport http iso20022 https://mcp.isonavigator.io/iso20022
+```
+
+Add `--scope user` to make it available in every project; the default is the current project only. Or add it to `~/.gemini/settings.json` (`.gemini/settings.json` for one project):
+
+```json
+{
+  "mcpServers": {
+    "iso20022": {
+      "httpUrl": "https://mcp.isonavigator.io/iso20022"
+    }
+  }
+}
+```
+
+Use `httpUrl`, not `url`, which is for SSE servers. Check it with `gemini mcp list`, or `/mcp` inside a session. Which Google accounts or API keys Gemini CLI accepts is set by Google and has changed; check Google's current documentation if it will not start.
+
 ### Any other MCP client
 
 Any client that supports remote MCP servers over Streamable HTTP can use the endpoint URL. A database-independent
@@ -167,6 +204,7 @@ See the top of `server.py` for the other settings.
 ```
 pip install -r requirements-dev.txt
 bandit -q -r . -x ./tests,./.venv
+ruff check .
 python -m pytest -q
 ```
 

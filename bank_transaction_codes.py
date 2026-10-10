@@ -304,7 +304,7 @@ def find_transaction_codes(
             notes.append(f"{x} exists at more than one level ({', '.join(levels)}); each is returned separately. "
                          "To ask for one level, send " + ", ".join(f"{pin[lv]} for a {lv}" for lv in levels) + ".")
     else:
-        slot_map = dict(zip(LEVELS, slots_t))
+        slot_map = dict(zip(LEVELS, slots_t, strict=True))
         shown_input = _canonical(slots_t)
         found_rows = run(SQL_BY_SLOTS, {"d": slots_t[0], "f": slots_t[1], "s": slots_t[2]})
         if found_rows:

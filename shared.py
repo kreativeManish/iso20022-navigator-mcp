@@ -60,7 +60,7 @@ def query(tool: str, sql: str, params: dict) -> list[dict]:
         return fetch_all(sql, params)
     except Exception:
         log.exception("database error in %s", tool)
-        raise ToolError("The ISO 20022 reference database is temporarily unavailable. Try again in a minute.")
+        raise ToolError("The ISO 20022 reference database is temporarily unavailable. Try again in a minute.") from None
 
 
 def respond(result: BaseModel, keep: tuple[str, ...] = ()) -> CallToolResult:

@@ -47,7 +47,7 @@ class FakeDatabase:
             return [{"release_id": "4Q2025"}]
         if sql == btc.SQL_BY_SLOTS:
             return [_row(c) for c in self.combos
-                    if all(p is None or p == v for p, v in zip((params["d"], params["f"], params["s"]), c))]
+                    if all(p is None or p == v for p, v in zip((params["d"], params["f"], params["s"]), c, strict=True))]
         if sql == btc.SQL_BY_ANY:
             return [_row(c) for c in self.combos if params["x"] in c]
         if sql == btc.SQL_DESCRIPTION:
@@ -58,7 +58,7 @@ class FakeDatabase:
                     for concept, i in concepts.items() if any(c[i] == code for c in self.combos)]
         if sql == btc.SQL_CLOSEST:
             want = (params["d"], params["f"], params["s"])
-            scored = [(sum(w is not None and w == v for w, v in zip(want, c)), c) for c in self.combos]
+            scored = [(sum(w is not None and w == v for w, v in zip(want, c, strict=True)), c) for c in self.combos]
             hits = sorted(((-n, c) for n, c in scored if n), key=lambda x: (x[0], x[1]))
             return [{"domain": c[0], "family": c[1], "subfamily": c[2], "total": len(hits)}
                     for _, c in hits[:params["limit"]]]
