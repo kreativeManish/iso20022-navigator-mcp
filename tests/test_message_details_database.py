@@ -134,8 +134,8 @@ def test_structure_and_code_set_counts_match_the_tables(sample):
                                      "AND variant = 1 AND depth < 2 GROUP BY depth", (message_id,))), message_id
         else:
             assert "structure" not in b, message_id
-        [c] = rows("SELECT count(*) AS n FROM i22_codeset_message WHERE message_id = %s AND variant = 1 "
-                   "AND deactivated_in IS NULL", (message_id,))
+        [c] = rows("SELECT count(*) AS n FROM i22_codeset_message WHERE message_id = %s AND variant = 1",
+                   (message_id,))
         assert b["code_set_count"] == c["n"], message_id
 
 
