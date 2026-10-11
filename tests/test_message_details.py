@@ -166,7 +166,7 @@ def test_not_found_names_nearest_held_messages(db):
     assert body["closest_ids"] == ["pacs.004", "pacs.003", "pacs.007", "pacs.002", "pacs.008"]
     assert len(body["closest_ids"]) == md.MAX_CLOSEST_IDS
     notes = " ".join(body["notes"])
-    assert "pacs.005 is not in this dataset" in notes and "Do not describe it from general knowledge" in notes
+    assert "pacs.005 is outside this dataset" in notes and "Limit the answer to what this response shows" in notes
     assert "Showing 5 of 7 held messages in the pacs business area" in notes
     for field in ("name", "latest_version", "structure", "code_set_count", "description"):
         assert field not in body
@@ -209,7 +209,7 @@ def test_counting_rule_travels_with_the_structure_figures(db):
     """[7.1] Responses and schema say what the counts include: optional elements and every alternative of a choice."""
     scope = ask("pacs.008")["provenance"]["scope"]
     assert md.COUNTING_RULE in scope
-    for word in ("optional", "alternative", "mandatory"):
+    for word in ("optional", "alternative", "mandatory", "depths 0 and 1", "omits"):
         assert word in md.COUNTING_RULE.lower()
     schema = str(support.tool_definition(TOOL)["outputSchema"])
     assert schema.count("alternative") >= 2          # total_elements and elements_by_depth

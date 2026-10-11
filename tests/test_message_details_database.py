@@ -148,7 +148,7 @@ def test_not_found_in_a_real_area_suggests_held_messages(held):
     assert b["found"] is False
     assert 0 < len(b["closest_ids"]) <= md.MAX_CLOSEST_IDS
     assert all(i in ids and i.startswith("pacs.") for i in b["closest_ids"])
-    assert any("not in this dataset" in n for n in b["notes"])
+    assert any("outside this dataset" in n for n in b["notes"])
 
 
 def test_not_found_in_an_unknown_area():

@@ -26,7 +26,8 @@ MAX_CLOSEST_IDS = 5
 
 COUNTING_RULE = ("Structure figures count every element declared in the message definition. Optional elements and "
                  "every alternative of a choice are counted alongside mandatory ones, so the figures describe the size "
-                 "of the definition, and a single message instance uses a subset of it.")
+                 "of the definition, and a single message instance uses a subset of it. total_elements also counts the two "
+                 "elements at depths 0 and 1 (Document container, message), which elements_by_depth omits.")
 
 MESSAGE_SCOPE = ("ISO 20022 message catalogue and parsed message definitions held in the Navigator: the standard "
                  "variant (variant 1) at the latest version held. Structure figures are element counts from the "
@@ -219,8 +220,8 @@ def get_message_details(
 def _not_found(short: str, area: str, number: str, notes: list[str]) -> object:
     """Explicit, explained not-found with the nearest held messages in the same area [3.5][7.1]."""
     near = query(TOOL_NAME, SQL_CLOSEST, {"area": area, "n": int(number), "limit": MAX_CLOSEST_IDS})
-    notes.append(f"{short} is not in this dataset. The dataset holds most but not all ISO 20022 messages, "
-                 "so a message missing here may still exist at ISO. Do not describe it from general knowledge.")
+    notes.append(f"{short} is outside this dataset. The dataset covers most ISO 20022 messages, and a message absent "
+                 "here may still exist at ISO. Limit the answer to what this response shows.")
     if near:
         if near[0]["total"] > len(near):
             notes.append(f"Showing {len(near)} of {near[0]['total']} held messages in the {area} business area, "
