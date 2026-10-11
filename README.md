@@ -17,6 +17,7 @@ All tools are read-only.
 | Tool | What it answers |
 |---|---|
 | [`iso20022_bank_transaction_codes`](#iso20022_bank_transaction_codes) | What an ISO 20022 Bank Transaction Code (domain, family, subfamily) means, and which codes exist under a domain or family. |
+| [`iso20022_message_details`](#iso20022_message_details) | What a specific ISO 20022 message is: its name, description, business area, latest version and structure size. |
 | [`iso20022_legacy_and_scheme_mappings`](#iso20022_legacy_and_scheme_mappings) | Which ISO 20022 message replaces a legacy message, and which payment schemes use an ISO 20022 message. |
 
 ### `iso20022_bank_transaction_codes`
@@ -39,6 +40,23 @@ All tools are read-only.
   - Covers the ISO external code list. Bank-specific (proprietary) codes are outside it, so a code that is not found may be one of those.
   - Codes are matched, not meanings. To find a code for a type of transaction, browse from the domain down.
   - Combination descriptions are AI-generated and validated against the official ISO definitions.
+
+### `iso20022_message_details`
+
+- **Answers:** what a specific ISO 20022 message is, for example `pacs.008` or `camt.053`: its official name, a plain-English description, the business area and domain it belongs to, its latest version and the size and shape of its structure.
+- **Input:** `message_id`, four letters and three digits. Any case works, and a dot, hyphen, underscore, space or a bare join all work (`pacs.008`, `PACS-008`, `pacs008`). A full identifier such as `pacs.008.001.13` is accepted too; the response describes the latest version held and notes any difference.
+- **Returns:** the message name, description, business area (code, name and domain), the Navigator's functional grouping, latest version, structure statistics (total elements, maximum depth and element counts at each depth), the number of external code sets the message uses, notes and a `provenance` block. A message that is missing from the dataset says so and lists up to five held messages in the same business area, nearest number first.
+- **Example questions:**
+  - What is pacs.008?
+  - Which business area does camt.053 belong to?
+  - How large is the pain.001 message definition?
+  - Is camt.099 still current?
+- **Notes:**
+  - Covers the standard variant (variant 1) of each message, at the latest version held.
+  - Structure figures are element counts from the message definition. The element tree itself is outside this tool's response.
+  - The functional grouping is the Navigator's own and is separate from the ISO 20022 standard.
+  - Retired messages are returned with the data load in which they were retired.
+  - Descriptions are AI-generated and validated against the official ISO definitions.
 
 ### `iso20022_legacy_and_scheme_mappings`
 
