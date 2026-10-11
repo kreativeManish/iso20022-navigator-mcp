@@ -27,6 +27,7 @@ from starlette.responses import PlainTextResponse
 
 import bank_transaction_codes
 import mappings
+import message_details
 from calls import guarded
 from db import pool
 
@@ -52,9 +53,11 @@ logging.basicConfig(level=logging.INFO, handlers=[_handler])
 INSTRUCTIONS = (
     "Read-only reference data for ISO 20022 financial messaging, from the ISO 20022 Navigator "
     "(https://www.isonavigator.io/iso20022/). Use these tools for any question about what an ISO 20022 "
-    "Bank Transaction Code (domain, family, subfamily) means, which ISO 20022 message replaces or "
-    "corresponds to a legacy message (SWIFT MT, NACHA, CHAPS legacy), or which payment schemes use an "
-    "ISO 20022 message, even when the answer seems well known: they return sourced, current data. "
+    "Bank Transaction Code (domain, family, subfamily) means, what a specific ISO 20022 message (such "
+    "as pacs.008 or camt.053) is, including its business area, latest version and structure size, "
+    "which ISO 20022 message replaces or corresponds to a legacy message (SWIFT MT, NACHA, CHAPS "
+    "legacy), or which payment schemes use an ISO 20022 message, even when the answer seems well "
+    "known: they return sourced, current data. "
     "For a bank transaction code, send the full code to get its meaning; to find a code for a transaction "
     "type, browse from the domain down. For 'which schemes use X', call once without a standard filter. "
     "Answer from the returned data. If a response has found=false or notes saying data is not recorded, "
@@ -81,12 +84,18 @@ mcp = MCPServer(name="iso20022-navigator", version="0.1.0",
                 instructions=INSTRUCTIONS, lifespan=lifespan)
 
 # Each tool: its rate-limit tier, and the inputs that are safe to log (identifiers only, never free text).
-# Registered in this order, which is the order clients list them: bank transaction codes first.
+# Registered in this order, which is the order clients list them: bank transaction codes, message details, mappings.
 BTC_TITLE = "ISO 20022 bank transaction codes"
 mcp.tool(name=bank_transaction_codes.TOOL_NAME, title=BTC_TITLE,
          annotations=ToolAnnotations(title=BTC_TITLE, **READ_ONLY))(
     guarded(bank_transaction_codes.TOOL_NAME, tier="lookup", log_inputs=("code",))(
         bank_transaction_codes.find_transaction_codes))
+
+MESSAGE_TITLE = "ISO 20022 message details"
+mcp.tool(name=message_details.TOOL_NAME, title=MESSAGE_TITLE,
+         annotations=ToolAnnotations(title=MESSAGE_TITLE, **READ_ONLY))(
+    guarded(message_details.TOOL_NAME, tier="lookup", log_inputs=("message_id",))(
+        message_details.get_message_details))
 
 MAPPINGS_TITLE = "ISO 20022 legacy and scheme mappings"
 mcp.tool(name="iso20022_legacy_and_scheme_mappings", title=MAPPINGS_TITLE,
