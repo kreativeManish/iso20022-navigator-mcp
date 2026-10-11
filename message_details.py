@@ -104,10 +104,11 @@ GROUP  BY depth
 ORDER  BY depth
 """
 
+# The junction table has no versioning columns; its primary key (concept, message_id, variant) makes this a code set count.
 SQL_CODESETS = """
 SELECT count(*) AS n
 FROM   i22_codeset_message
-WHERE  message_id = %(m)s AND variant = 1 AND deactivated_in IS NULL
+WHERE  message_id = %(m)s AND variant = 1
 """
 
 # Held messages in the same business area, nearest number first.
