@@ -21,7 +21,7 @@ import support
 pytestmark = pytest.mark.skipif(not support.HAS_DB, reason="no DATABASE_URL: database checks skipped")
 
 TOOL = support.MESSAGE_TOOL
-BUDGET_CHARS = 6_000           # [3.2] First setting, before the first measurement. The size table printed by
+BUDGET_CHARS = 2_500           # [3.2] Measured 2026-10-11 in CI: largest is catm.005 at 1,786 characters. 2,500 leaves about 40% headroom for a data refresh.
                                # test_largest_responses_within_budget gives the real maximum; tighten to it plus headroom.
 MAX_SECONDS = 3.0              # [5.3] per call, after a warm-up call
 SAMPLE = 40                    # messages asked per sampled check (well inside the 600-per-minute limit)
