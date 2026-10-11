@@ -224,7 +224,7 @@ def test_tool_description_points_to_the_mappings_tool():
 
 @pytest.mark.parametrize("message_id", [
     "pacs.008' OR '1'='1", "pacs.008; DROP TABLE i22_release", "pacs.008' UNION SELECT 1 --", "%", "_", "",
-    "x" * 25, "1=1", "pacs.008‮", "pacs.008\n\x00", "pacs.008.001.13.99", "pacs.0081",
+    "x" * 25, "1=1", "pacs.008\u202e", "pacs.008\n\x00", "pacs.008.001.13.99", "pacs.0081",
 ])
 def test_pattern_breakers_never_reach_the_database(monkeypatch, message_id):
     fake = FakeDatabase()
