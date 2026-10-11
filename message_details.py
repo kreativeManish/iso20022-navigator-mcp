@@ -24,9 +24,13 @@ TOOL_NAME = "iso20022_message_details"
 
 MAX_CLOSEST_IDS = 5
 
+COUNTING_RULE = ("Structure figures count every element declared in the message definition. Optional elements and "
+                 "every alternative of a choice are counted alongside mandatory ones, so the figures describe the size "
+                 "of the definition, and a single message instance uses a subset of it.")
+
 MESSAGE_SCOPE = ("ISO 20022 message catalogue and parsed message definitions held in the Navigator: the standard "
                  "variant (variant 1) at the latest version held. Structure figures are element counts from the "
-                 "message definition; the element tree itself is not returned.")
+                 "message definition; the element tree itself is not returned. " + COUNTING_RULE)
 
 ACCEPTED_FORMS = ("Accepted forms: pacs.008, camt.053 (four letters and three digits; any case; a dot, hyphen, "
                   "underscore, space or no separator), or a full identifier such as pacs.008.001.13.")
@@ -48,11 +52,13 @@ class BusinessArea(BaseModel):
 
 class Structure(BaseModel):
     total_elements: int = Field(
-        description="All elements in the message definition, including the document wrapper at depths 0 and 1")
+        description="All elements declared in the message definition, including the document wrapper at depths 0 and 1. "
+                    "Optional elements and every alternative of a choice are counted.")
     max_depth: int = Field(description="Deepest nesting level in the message definition")
     elements_by_depth: dict[str, int] | None = Field(
-        None, description="Element counts keyed by depth. Depth 2 holds the message's top-level blocks; "
-                          "depths 0 and 1 are the document wrapper. Runs from depth 2 to max_depth.")
+        None, description="Element counts keyed by depth, counted as total_elements is (optional elements and all "
+                          "alternatives included). Depth 2 holds the message's top-level blocks; depths 0 and 1 are "
+                          "the document wrapper. Runs from depth 2 to max_depth.")
 
 
 class MessageDetailsResult(BaseModel):

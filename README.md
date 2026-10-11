@@ -53,7 +53,7 @@ All tools are read-only.
   - Is camt.099 still current?
 - **Notes:**
   - Covers the standard variant (variant 1) of each message, at the latest version held.
-  - Structure figures are element counts from the message definition. The element tree itself is outside this tool's response.
+  - Structure figures are element counts from the message definition. The element tree itself is outside this tool's response. Counts cover every declared element: optional elements and every alternative of a choice are counted alongside mandatory ones, so the figures describe the size of the definition, and a single message instance uses a subset of it.
   - The functional grouping is the Navigator's own and is separate from the ISO 20022 standard.
   - Retired messages are returned with the data load in which they were retired.
   - Descriptions are AI-generated and validated against the official ISO definitions.

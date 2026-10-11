@@ -205,6 +205,16 @@ def test_description_is_labelled_ai_generated_in_the_schema():
     assert "not part of the ISO 20022 standard" in schema.replace("\\n", " ")
 
 
+def test_counting_rule_travels_with_the_structure_figures(db):
+    """[7.1] Responses and schema say what the counts include: optional elements and every alternative of a choice."""
+    scope = ask("pacs.008")["provenance"]["scope"]
+    assert md.COUNTING_RULE in scope
+    for word in ("optional", "alternative", "mandatory"):
+        assert word in md.COUNTING_RULE.lower()
+    schema = str(support.tool_definition(TOOL)["outputSchema"])
+    assert schema.count("alternative") >= 2          # total_elements and elements_by_depth
+
+
 def test_tool_description_points_to_the_mappings_tool():
     text = support.tool_definition(TOOL)["description"]
     assert "iso20022_legacy_and_scheme_mappings" in text and "variant 1" in text
