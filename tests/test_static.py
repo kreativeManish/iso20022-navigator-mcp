@@ -41,14 +41,17 @@ def test_no_select_star():
 
 
 def test_inputs_typed_and_bounded(definition):
-    """[2.1] Every text parameter has a maximum length and a pattern or enum."""
+    """[2.1] Every text parameter has a maximum length and a pattern or enum; every number a minimum and maximum."""
     for name, prop in definition["inputSchema"]["properties"].items():
         variants = prop.get("anyOf", [prop])
         strings = [v for v in variants if v.get("type") == "string"]
-        assert strings, f"{name}: no string type"
+        numbers = [v for v in variants if v.get("type") in ("integer", "number")]
+        assert strings or numbers, f"{name}: no string or number type"
         for v in strings:
             assert "maxLength" in v, f"{name}: no maxLength"
             assert "pattern" in v or "enum" in v, f"{name}: no pattern or enum"
+        for v in numbers:
+            assert "minimum" in v and "maximum" in v, f"{name}: no minimum/maximum"
 
 
 def test_structured_output_declared(definition):

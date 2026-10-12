@@ -27,7 +27,8 @@ HAS_DB = os.environ["DATABASE_URL"] != PLACEHOLDER_URL
 MAPPINGS_TOOL = "iso20022_legacy_and_scheme_mappings"
 BTC_TOOL = "iso20022_bank_transaction_codes"
 MESSAGE_TOOL = "iso20022_message_details"
-TOOLS = (BTC_TOOL, MESSAGE_TOOL, MAPPINGS_TOOL)        # the order clients list them
+CODE_SETS_TOOL = "iso20022_code_sets"
+TOOLS = (BTC_TOOL, MESSAGE_TOOL, MAPPINGS_TOOL, CODE_SETS_TOOL)        # the order clients list them
 
 
 def call_tool(*arg_sets: dict, tool: str = MAPPINGS_TOOL) -> list:
