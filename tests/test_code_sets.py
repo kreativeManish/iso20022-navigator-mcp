@@ -193,7 +193,7 @@ def test_code_set_found_by_concept_or_full_name(db, message):
     assert body["found"] is True and body["input_kind"] == "code_set" and body["input"] == "BalanceType"
     assert body["code_set"] == {"concept": "BalanceType", "name": "ExternalBalanceType1Code",
                                 "navigator_group": "Account & Balance", "concept_description": "Balance types.",
-                                "active_values": 3}
+                                "active_values": 3, "message_count": 2}
 
 
 def test_values_are_pipe_delimited_with_header(db):
@@ -220,11 +220,13 @@ def test_missing_description_and_group_drop_their_notes(db):
 def test_used_in_messages_lists_ids_once(db):
     body = ask("BalanceType")
     assert body["used_in_messages"] == ["camt.052", "camt.053"]
+    assert body["code_set"]["message_count"] == 2
 
 
 def test_set_without_messages_says_so(db):
     body = ask("ReceivedReason")
     assert "used_in_messages" not in body
+    assert body["code_set"]["message_count"] == 0
     assert any(n.startswith("No messages are recorded as using ReceivedReason") for n in body["notes"])
 
 
@@ -279,6 +281,7 @@ def test_code_not_in_set_is_an_explained_not_found(db):
     body = ask("BalanceType", code="NOPE")
     assert body["found"] is False and body["code_set"]["concept"] == "BalanceType"
     assert "values" not in body and "used_in_messages" not in body
+    assert "message_count" not in body["code_set"]
     assert any("'NOPE' is not a value of BalanceType" in n and "Do not infer" in n for n in body["notes"])
 
 
@@ -324,6 +327,7 @@ def test_every_page_carries_the_set_context(db):
     for body in pages:
         assert body["code_set"]["concept"] == "Purpose"
         assert body["used_in_messages"] == ["pacs.008", "pain.001"]
+        assert body["code_set"]["message_count"] == 2
         assert code_sets.AI_NOTE in body["notes"]
 
 
@@ -348,6 +352,7 @@ def test_long_message_list_fits_with_the_values(db):
     result = call({"message": "AccountIdentification"})
     body = result.structured_content
     assert len(body["used_in_messages"]) == 193
+    assert body["code_set"]["message_count"] == 193
     assert len(result.content[0].text) <= BUDGET_CHARS
     assert body["page"]["complete"] is True
 

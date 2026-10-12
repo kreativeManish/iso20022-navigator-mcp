@@ -102,6 +102,8 @@ def test_found_response_content(db):
     assert body["business_area"] == {"code": "pacs", "name": "Payments Clearing and Settlement",
                                      "domain": "Payments"}
     assert body["code_set_count"] == 7
+    assert body["next_calls"] == [{"tool": "iso20022_code_sets", "arguments": {"message": "pacs.008"},
+                                   "purpose": "The 7 code sets pacs.008 uses, with their number of values"}]
     assert "notes" not in body and "deactivated_in" not in body and "closest_ids" not in body
 
 
@@ -114,7 +116,17 @@ def test_structure_counts_by_depth(db):
 
 def test_zero_code_sets_is_reported_not_omitted(monkeypatch):
     monkeypatch.setattr(shared, "fetch_all", FakeDatabase(code_sets=0))
-    assert ask("pacs.008")["code_set_count"] == 0
+    body = ask("pacs.008")
+    assert body["code_set_count"] == 0 and "next_calls" not in body
+
+
+def test_one_code_set_is_worded_in_the_singular(monkeypatch):
+    monkeypatch.setattr(shared, "fetch_all", FakeDatabase(code_sets=1))
+    assert ask("pacs.008")["next_calls"][0]["purpose"] == "The 1 code set pacs.008 uses, with their number of values"
+
+
+def test_next_call_names_the_message_without_version_or_variant(db):
+    assert ask("pacs.008.001.13")["next_calls"][0]["arguments"] == {"message": "pacs.008"}
 
 
 def test_missing_business_area_does_not_make_the_message_not_found(db):
@@ -168,7 +180,7 @@ def test_not_found_names_nearest_held_messages(db):
     notes = " ".join(body["notes"])
     assert "pacs.005 is outside this dataset" in notes and "Limit the answer to what this response shows" in notes
     assert "Showing 5 of 7 held messages in the pacs business area" in notes
-    for field in ("name", "latest_version", "structure", "code_set_count", "description"):
+    for field in ("name", "latest_version", "structure", "code_set_count", "description", "next_calls"):
         assert field not in body
 
 

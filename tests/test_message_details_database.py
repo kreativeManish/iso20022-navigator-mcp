@@ -137,6 +137,12 @@ def test_structure_and_code_set_counts_match_the_tables(sample):
         [c] = rows("SELECT count(*) AS n FROM i22_codeset_message WHERE message_id = %s AND variant = 1",
                    (message_id,))
         assert b["code_set_count"] == c["n"], message_id
+        if c["n"]:
+            assert b["next_calls"] == [{"tool": "iso20022_code_sets", "arguments": {"message": message_id},
+                                        "purpose": b["next_calls"][0]["purpose"]}], message_id
+            assert str(c["n"]) in b["next_calls"][0]["purpose"], message_id
+        else:
+            assert "next_calls" not in b, message_id
 
 
 # ---- not found ---------------------------------------------------------------------------

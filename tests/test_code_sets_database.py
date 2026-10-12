@@ -178,6 +178,8 @@ def test_used_in_messages_matches_the_database(code_set_pages):
     for concept, pages in code_set_pages.items():
         got = len(pages[0].structured_content.get("used_in_messages", []))
         assert got == expected.get(concept, 0), f"{concept}: {got} messages, expected {expected.get(concept, 0)}"
+        for page in pages:
+            assert page.structured_content["code_set"]["message_count"] == got, f"{concept}: message_count differs"
         for later in pages[1:]:
             assert later.structured_content.get("used_in_messages") == pages[0].structured_content.get(
                 "used_in_messages"), f"{concept}: the message list differs between pages"

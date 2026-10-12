@@ -21,6 +21,7 @@ from mappings import _retired_note          # same wording as the mappings tool 
 from shared import Provenance, current_release, query, respond
 
 TOOL_NAME = "iso20022_message_details"
+CODE_SETS_TOOL_NAME = "iso20022_code_sets"
 
 MAX_CLOSEST_IDS = 5
 
@@ -62,6 +63,12 @@ class Structure(BaseModel):
                           "the document wrapper. Runs from depth 2 to max_depth.")
 
 
+class NextCall(BaseModel):
+    tool: str = Field(description="Name of the tool that returns the related data")
+    arguments: dict[str, str] = Field(description="The arguments to send to that tool")
+    purpose: str = Field(description="What the call returns")
+
+
 class MessageDetailsResult(BaseModel):
     found: bool
     input: str = Field(description="The message identifier as interpreted by the server, e.g. pacs.008")
@@ -80,6 +87,10 @@ class MessageDetailsResult(BaseModel):
         None, description="Size and shape of the message definition; absent when no structure is held")
     code_set_count: int | None = Field(
         None, description="Number of external code sets the message uses")
+    next_calls: list[NextCall] = Field(
+        default_factory=list,
+        description="Follow-up calls that return related data too large to include here, each with the tool "
+                    "and the arguments to send; absent when there is nothing to follow up")
     closest_ids: list[str] = Field(
         default_factory=list,
         description="Not found only: up to 5 held messages in the same business area, nearest number first")
@@ -152,6 +163,15 @@ def _structure(rows: list[dict]) -> Structure | None:
                      elements_by_depth=shown or None)
 
 
+def _next_calls(short: str, code_set_count: int) -> list[NextCall]:
+    """Pointers to related data held by other tools [3.7]. One today: the message's code sets."""
+    if not code_set_count:
+        return []
+    noun = "code set" if code_set_count == 1 else "code sets"
+    return [NextCall(tool=CODE_SETS_TOOL_NAME, arguments={"message": short},
+                     purpose=f"The {code_set_count} {noun} {short} uses, with their number of values")]
+
+
 # --------------------------------------------------------------------------
 # The tool
 # --------------------------------------------------------------------------
@@ -180,7 +200,8 @@ def get_message_details(
 
     Covers the standard variant (variant 1) of each message, at the latest version held. For legacy
     equivalents (SWIFT MT, NACHA, CHAPS) and the schemes that use a message, use
-    iso20022_legacy_and_scheme_mappings.
+    iso20022_legacy_and_scheme_mappings. For the list of code sets a message uses, use
+    iso20022_code_sets (the response's next_calls names it).
     """
     area, number, req_variant, req_version = _parse(message_id)
     short = f"{area}.{number}"
@@ -213,7 +234,7 @@ def get_message_details(
                        if row["area_code"] else None),
         navigator_group=row["message_group"], description=row["rich_description"],
         deactivated_in=row["deactivated_in"], structure=structure, code_set_count=code_sets,
-        notes=notes, provenance=Provenance(scope=MESSAGE_SCOPE, **current_release()),
+        next_calls=_next_calls(short, code_sets), notes=notes, provenance=Provenance(scope=MESSAGE_SCOPE, **current_release()),
     ))
 
 
