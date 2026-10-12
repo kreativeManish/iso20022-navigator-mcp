@@ -19,6 +19,7 @@ All tools are read-only.
 | [`iso20022_bank_transaction_codes`](#iso20022_bank_transaction_codes) | What an ISO 20022 Bank Transaction Code (domain, family, subfamily) means, and which codes exist under a domain or family. |
 | [`iso20022_message_details`](#iso20022_message_details) | What a specific ISO 20022 message is: its name, description, business area, latest version and structure size. |
 | [`iso20022_legacy_and_scheme_mappings`](#iso20022_legacy_and_scheme_mappings) | Which ISO 20022 message replaces a legacy message, and which payment schemes use an ISO 20022 message. |
+| [`iso20022_code_sets`](#iso20022_code_sets) | What an ISO 20022 external code set contains, what a code means, and which code sets a message uses. |
 
 ### `iso20022_bank_transaction_codes`
 
@@ -73,11 +74,28 @@ All tools are read-only.
   - Retired messages are returned with the data load in which they were retired.
   - Responses list what the Navigator has recorded. When a mapping is missing, the response says so and directs assistants to answer from the recorded data.
 
+### `iso20022_code_sets`
+
+- **Answers:** what an ISO 20022 external code set contains (for example `BalanceType`), what a code such as `CLBD` means, whether a code belongs to a set, which code sets a message uses, and which messages use a code set.
+- **Inputs:** `message` (a code set such as `BalanceType` or `ExternalBalanceType1Code`, a code such as `CLBD`, or an ISO 20022 message such as `camt.053`), an optional `code` (checks one value in the code set) and an optional `offset` (continues a long list).
+- **Returns:** for a code set, its details, its values (code, name, description) and the messages that use it. For a code, every code set that holds it. For a message, its code sets with their number of values. Lists arrive as pipe-delimited text with a header row. Long lists come in pages; each response states whether the list is complete and the `next_offset` to continue.
+- **Example questions:**
+  - Which codes does the BalanceType code set contain?
+  - Is CLBD a valid balance type code?
+  - What does the code OTHR mean in ISO 20022?
+  - Which code sets does camt.053 use?
+- **Notes:**
+  - Bank Transaction Code values are served by `iso20022_bank_transaction_codes`.
+  - Links between code sets and messages are recorded per message, and per element is outside the data.
+  - Deactivated values are returned with the data load in which they were deactivated.
+  - Code set descriptions (`concept_description`) are AI-generated. Value descriptions are ISO text.
+  - `navigator_group` is the Navigator's own grouping of code sets, which differs from an ISO classification.
+
 ## Getting the assistant to use it
 
 Some assistants answer from general knowledge unless asked to use a tool, a choice made by the assistant. Adding the following line to a Project's instructions helps the assistant use the tools where they apply:
 
-> For any question about ISO 20022 bank transaction codes, messages, their legacy equivalents (SWIFT MT, NACHA) or which payment schemes use a message, call the ISO Navigator connector first and answer from its data.
+> For any question about ISO 20022 bank transaction codes, messages, their legacy equivalents (SWIFT MT, NACHA), which payment schemes use a message, what an external code set or code means, or which code sets a message uses, call the ISO Navigator connector first and answer from its data.
 
 Other assistants may behave differently. If an answer comes without a tool call, ask again with "according to the ISO Navigator".
 
