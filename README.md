@@ -1,5 +1,7 @@
 # ISO 20022 Navigator MCP server
 
+[![smithery badge](https://smithery.ai/badge/kreativemanish/iso20022-navigator)](https://smithery.ai/servers/kreativemanish/iso20022-navigator)
+
 An [MCP](https://modelcontextprotocol.io) server that gives AI assistants grounded answers
 about ISO 20022 financial messaging, from the reference data behind the
 [ISO 20022 Navigator](https://www.isonavigator.io/iso20022/).
