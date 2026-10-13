@@ -73,6 +73,9 @@ class CodeSetInfo(BaseModel):
     deactivated_in: str | None = Field(
         None, description="Navigator data load (quarter) in which the code set was marked deactivated; "
                           "absent if current")
+    message_count: int | None = Field(
+        None, description="Number of messages in used_in_messages (all variants). Use it instead of counting "
+                          "the list; absent when the requested code is not in the set")
 
 
 class Page(BaseModel):
@@ -262,6 +265,7 @@ def _by_code_set(cs: dict, code_filter: str | None, offset: int) -> CodeSetsResu
 
     messages = [r["message_id"] for r in _q(SQL_SET_MESSAGES, {"c": concept})]
     res.used_in_messages = messages
+    info.message_count = len(messages)
     if messages:
         notes.append("used_in_messages lists message IDs across all variants; usage is recorded per message, "
                      "not per element.")

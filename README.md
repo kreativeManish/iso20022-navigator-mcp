@@ -46,7 +46,7 @@ All tools are read-only.
 
 - **Answers:** what a specific ISO 20022 message is, for example `pacs.008` or `camt.053`: its official name, a plain-English description, the business area and domain it belongs to, its latest version and the size and shape of its structure.
 - **Input:** `message_id`, four letters and three digits. Any case works, and a dot, hyphen, underscore, space or a bare join all work (`pacs.008`, `PACS-008`, `pacs008`). A full identifier such as `pacs.008.001.13` is accepted too; the response describes the latest version held and notes any difference.
-- **Returns:** the message name, description, business area (code, name and domain), the Navigator's functional grouping, latest version, structure statistics (total elements, maximum depth and element counts at each depth), the number of external code sets the message uses, notes and a `provenance` block. A message that is missing from the dataset says so and lists up to five held messages in the same business area, nearest number first.
+- **Returns:** the message name, description, business area (code, name and domain), the Navigator's functional grouping, latest version, structure statistics (total elements, maximum depth and element counts at each depth), the number of external code sets the message uses with a `next_calls` pointer to `iso20022_code_sets` for the list, notes and a `provenance` block. A message that is missing from the dataset says so and lists up to five held messages in the same business area, nearest number first.
 - **Example questions:**
   - What is pacs.008?
   - Which business area does camt.053 belong to?
@@ -78,7 +78,7 @@ All tools are read-only.
 
 - **Answers:** what an ISO 20022 external code set contains (for example `BalanceType`), what a code such as `CLBD` means, whether a code belongs to a set, which code sets a message uses, and which messages use a code set.
 - **Inputs:** `message` (a code set such as `BalanceType` or `ExternalBalanceType1Code`, a code such as `CLBD`, or an ISO 20022 message such as `camt.053`), an optional `code` (checks one value in the code set) and an optional `offset` (continues a long list).
-- **Returns:** for a code set, its details, its values (code, name, description) and the messages that use it. For a code, every code set that holds it. For a message, its code sets with their number of values. Lists arrive as pipe-delimited text with a header row. Long lists come in pages; each response states whether the list is complete and the `next_offset` to continue.
+- **Returns:** for a code set, its details, its values (code, name, description) and the messages that use it with their number (`message_count`). For a code, every code set that holds it. For a message, its code sets with their number of values. Lists arrive as pipe-delimited text with a header row. Long lists come in pages; each response states whether the list is complete and the `next_offset` to continue.
 - **Example questions:**
   - Which codes does the BalanceType code set contain?
   - Is CLBD a valid balance type code?
