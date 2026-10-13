@@ -3,8 +3,15 @@
   "name": "io.github.kreativeManish/iso20022-navigator",
   "title": "ISO 20022 Navigator",
   "description": "Look up ISO 20022 messages, bank transaction codes, legacy replacements like MT103, scheme use, and external code sets.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "websiteUrl": "https://www.isonavigator.io/iso20022/mcp.html",
+  "icons": [
+    {
+      "src": "https://www.isonavigator.io/iso20022/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
   "repository": {
     "url": "https://github.com/kreativeManish/iso20022-navigator-mcp",
     "source": "github"
