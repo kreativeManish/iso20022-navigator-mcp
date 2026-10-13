@@ -3,11 +3,15 @@ test_static.py — checks that need no database. They run on every push and pull
 
 Release checklist references are in square brackets, e.g. [2.1].
 """
+import ast
 import re
 
 import pytest
 
+import bank_transaction_codes
+import code_sets
 import mappings
+import message_details
 import shared
 import support
 
@@ -31,6 +35,30 @@ class _NoDatabase:
     def __call__(self, *args, **kwargs):
         self.calls.append(args)
         return []
+
+
+def test_tool_names_written_out_in_server():
+    """Every tool name is a plain string in server.py, for the registration and the log wrapper, and both match
+    the name the tool's module uses for its own log and error lines."""
+    tree = ast.parse((support.ROOT / "server.py").read_text(encoding="utf-8"))
+    pairs = []
+    for node in ast.walk(tree):
+        # mcp.tool(name="a", ...)(guarded("b", ...)(function))
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Call)):
+            continue
+        reg, wrapped = node.func, node.args[0] if node.args else None
+        if not (isinstance(reg.func, ast.Attribute) and reg.func.attr == "tool"):
+            continue
+        name = next((k.value for k in reg.keywords if k.arg == "name"), None)
+        assert isinstance(name, ast.Constant), "tool name is not a plain string"
+        guard = wrapped.func.args[0] if isinstance(wrapped, ast.Call) and isinstance(wrapped.func, ast.Call) else None
+        assert isinstance(guard, ast.Constant), f"{name.value}: log wrapper name is not a plain string"
+        pairs.append((name.value, guard.value))
+    assert sorted(a for a, _ in pairs) == sorted(support.TOOLS)
+    assert all(a == b for a, b in pairs)
+    assert bank_transaction_codes.TOOL_NAME == support.BTC_TOOL
+    assert message_details.TOOL_NAME == support.MESSAGE_TOOL
+    assert code_sets.TOOL_NAME == support.CODE_SETS_TOOL
 
 
 def test_no_select_star():

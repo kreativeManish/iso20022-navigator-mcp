@@ -90,16 +90,18 @@ mcp = MCPServer(name="iso20022-navigator", version="0.1.0",
 # Each tool: its rate-limit tier, and the inputs that are safe to log (identifiers only, never free text).
 # Registered in this order, which is the order clients list them: bank transaction codes, message details, mappings,
 # code sets.
+# Each name is written out here in full, so a reader of this file (or a directory that scans it) sees all four tools.
+# tests/test_static.py checks that these names match each module's TOOL_NAME.
 BTC_TITLE = "ISO 20022 bank transaction codes"
-mcp.tool(name=bank_transaction_codes.TOOL_NAME, title=BTC_TITLE,
+mcp.tool(name="iso20022_bank_transaction_codes", title=BTC_TITLE,
          annotations=ToolAnnotations(title=BTC_TITLE, **READ_ONLY))(
-    guarded(bank_transaction_codes.TOOL_NAME, tier="lookup", log_inputs=("code",))(
+    guarded("iso20022_bank_transaction_codes", tier="lookup", log_inputs=("code",))(
         bank_transaction_codes.find_transaction_codes))
 
 MESSAGE_TITLE = "ISO 20022 message details"
-mcp.tool(name=message_details.TOOL_NAME, title=MESSAGE_TITLE,
+mcp.tool(name="iso20022_message_details", title=MESSAGE_TITLE,
          annotations=ToolAnnotations(title=MESSAGE_TITLE, **READ_ONLY))(
-    guarded(message_details.TOOL_NAME, tier="lookup", log_inputs=("message_id",))(
+    guarded("iso20022_message_details", tier="lookup", log_inputs=("message_id",))(
         message_details.get_message_details))
 
 MAPPINGS_TITLE = "ISO 20022 legacy and scheme mappings"
@@ -109,9 +111,9 @@ mcp.tool(name="iso20022_legacy_and_scheme_mappings", title=MAPPINGS_TITLE,
         mappings.find_mappings))
 
 CODE_SETS_TITLE = "ISO 20022 code sets"
-mcp.tool(name=code_sets.TOOL_NAME, title=CODE_SETS_TITLE,
+mcp.tool(name="iso20022_code_sets", title=CODE_SETS_TITLE,
          annotations=ToolAnnotations(title=CODE_SETS_TITLE, **READ_ONLY))(
-    guarded(code_sets.TOOL_NAME, tier="lookup", log_inputs=("message", "code", "offset"))(
+    guarded("iso20022_code_sets", tier="lookup", log_inputs=("message", "code", "offset"))(
         code_sets.find_code_sets))
 
 MCP_PATH = "/" + os.environ.get("MCP_PATH", "/iso20022").strip("/")
