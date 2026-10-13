@@ -84,7 +84,7 @@ async def lifespan(server: MCPServer):
         pool.close()
 
 
-mcp = MCPServer(name="iso20022-navigator", version="0.1.0",
+mcp = MCPServer(name="iso20022-navigator", version="0.2.0",
                 instructions=INSTRUCTIONS, lifespan=lifespan)
 
 # Each tool: its rate-limit tier, and the inputs that are safe to log (identifiers only, never free text).
