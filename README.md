@@ -8,6 +8,8 @@ about ISO 20022 financial messaging, from the reference data behind the
 
 Free and public. The endpoint URL is all a client needs.
 
+Built by [Manish Patel](https://www.linkedin.com/in/kreativemanish) · Financial Systems Expert, Finance Transformation & Analytics
+
 **Endpoint:** `https://mcp.isonavigator.io/iso20022` (Streamable HTTP, open access)
 
 [Documentation](https://www.isonavigator.io/iso20022/mcp.html) · [Privacy](https://www.isonavigator.io/iso20022/mcp-privacy.html) · Support: i22navigatorapp@gmail.com
