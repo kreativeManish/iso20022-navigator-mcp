@@ -1,6 +1,6 @@
 # ISO 20022 Navigator MCP server
 
-[![smithery badge](https://smithery.ai/badge/kreativemanish/iso20022-navigator)](https://smithery.ai/servers/kreativemanish/iso20022-navigator)
+[![LightNow capabilities](https://lightnow.ai/badge/io.github.kreativeManish/iso20022-navigator)](https://lightnow.ai/servers/io.github.kreativeManish/iso20022-navigator)
 
 An [MCP](https://modelcontextprotocol.io) server that gives AI assistants grounded answers
 about ISO 20022 financial messaging, from the reference data behind the
